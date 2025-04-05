@@ -138,7 +138,7 @@ const CollegeList = () => {
         </div>
 
         {/* Controls */}
-        <div className="md:flex block justify-between items-center mb-6">
+        <div className="block justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Colleges</h2>
           <div className="space-x-2 flex md:flex-col flex-col gap-4 mt-12 items-center">
             
