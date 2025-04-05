@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { FaSearch } from 'react-icons/fa'; // Added FaSearch import
 import { collegeApi, getterFunction, posterFunction } from '../../../Api';
 import Swal from 'sweetalert2';
 
@@ -14,9 +15,9 @@ const AddCollege = ({ handleClose }) => {
     mobile: '',
     courseIds: [],
     supportIds: [],
-    fees: [], // Added fees array
+    fees: [],
     images: [],
-    videos: [], // Changed video to videos array
+    videos: [],
   });
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [mainCitySuggestions, setMainCitySuggestions] = useState([]);
@@ -65,7 +66,7 @@ const AddCollege = ({ handleClose }) => {
     setFormData((prev) => ({ ...prev, videos: updatedVideos }));
   };
 
-  // Image handlers (unchanged)
+  // Image handlers
   const handleAddImage = (e) => {
     e.preventDefault();
     setFormData((prev) => ({
@@ -95,14 +96,16 @@ const AddCollege = ({ handleClose }) => {
     setFormData((prev) => ({ ...prev, fees: updatedFees }));
   };
 
-  // Existing fetchSuggestions and debounce functions remain unchanged
-  const fetchSuggestions = async (input, type, setSuggestions) => {
+  // Updated fetchSuggestions to use geocode type for both fields
+  const fetchSuggestions = async (input, setSuggestions) => {
     if (!input) {
       setSuggestions([]);
       return;
     }
     try {
-      const res = await getterFunction(`${collegeApi.suggestLocation}?input=${encodeURIComponent(input)}&type=${type}`);
+      const res = await getterFunction(
+        `https://education-1064837086369.asia-south1.run.app/college/suggestLocation?input=${encodeURIComponent(input)}&type=geocode`
+      );
       const data = res.data || res;
       if (data && data.predictions && data.status === 'OK') {
         setSuggestions(data.predictions.map((pred) => pred.description));
@@ -110,28 +113,19 @@ const AddCollege = ({ handleClose }) => {
         setSuggestions([]);
       }
     } catch (e) {
-      console.error(`Error fetching ${type} suggestions:`, e);
+      console.error('Error fetching suggestions:', e);
       setSuggestions([]);
     }
   };
 
-  const debounce = (func, delay) => {
-    let timeout;
-    return (...args) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), delay);
-    };
+  // Search handlers without debounce
+  const handleAddressSearch = () => {
+    fetchSuggestions(formData.address, setAddressSuggestions);
   };
 
-  const handleAddressChange = debounce((value) => {
-    setFormData((prev) => ({ ...prev, address: value }));
-    fetchSuggestions(value, 'geocode', setAddressSuggestions);
-  }, 300);
-
-  const handleMainCityChange = debounce((value) => {
-    setFormData((prev) => ({ ...prev, mainCity: value }));
-    fetchSuggestions(value, '(cities)', setMainCitySuggestions);
-  }, 300);
+  const handleMainCitySearch = () => {
+    fetchSuggestions(formData.mainCity, setMainCitySuggestions);
+  };
 
   const getCourses = async () => {
     try {
@@ -208,10 +202,6 @@ const AddCollege = ({ handleClose }) => {
     } else if (name.startsWith('fee')) {
       const index = parseInt(name.split('-')[1]);
       handleFeeChange(index, value);
-    } else if (name === 'address') {
-      handleAddressChange(value);
-    } else if (name === 'mainCity') {
-      handleMainCityChange(value);
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -227,35 +217,91 @@ const AddCollege = ({ handleClose }) => {
       <h2 className="text-2xl font-semibold mb-6">Add New College</h2>
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Basic Fields */}
-        {['name', 'university', 'mobile', 'address', 'mainCity'].map((field) => (
+        {['name', 'university', 'mobile'].map((field) => (
           <div key={field} className="relative">
-            <label className="block text-gray-700 capitalize mb-2">
-              {field === 'mainCity' ? 'Center of City (Address)' : field}
-            </label>
+            <label className="block text-gray-700 capitalize mb-2">{field}</label>
             <input
               type="text"
               name={field}
               value={formData[field]}
               onChange={handleChange}
-              ref={field === 'address' ? addressInputRef : field === 'mainCity' ? mainCityInputRef : null}
               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
-            {(field === 'address' && addressSuggestions.length > 0) || (field === 'mainCity' && mainCitySuggestions.length > 0) ? (
-              <ul className="absolute z-20 bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow-lg">
-                {(field === 'address' ? addressSuggestions : mainCitySuggestions).map((suggestion, index) => (
-                  <li
-                    key={index}
-                    onClick={() => selectSuggestion(suggestion, field, field === 'address' ? setAddressSuggestions : setMainCitySuggestions)}
-                    className="p-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
           </div>
         ))}
+
+        {/* Address Field with Search Icon */}
+        <div className="relative">
+          <label className="block text-gray-700 capitalize mb-2">Address</label>
+          <div className="flex items-center">
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              ref={addressInputRef}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <button
+              type="button"
+              onClick={handleAddressSearch}
+              className="ml-2 p-2 text-gray-600 hover:text-blue-600"
+            >
+              <FaSearch />
+            </button>
+          </div>
+          {addressSuggestions.length > 0 && (
+            <ul className="absolute z-20 bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow-lg">
+              {addressSuggestions.map((suggestion, index) => (
+                <li
+                  key={index}
+                  onClick={() => selectSuggestion(suggestion, 'address', setAddressSuggestions)}
+                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Main City Field with Search Icon */}
+        <div className="relative">
+          <label className="block text-gray-700 capitalize mb-2">Center of City (Address)</label>
+          <div className="flex items-center">
+            <input
+              type="text"
+              name="mainCity"
+              value={formData.mainCity}
+              onChange={handleChange}
+              ref={mainCityInputRef}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <button
+              type="button"
+              onClick={handleMainCitySearch}
+              className="ml-2 p-2 text-gray-600 hover:text-blue-600"
+            >
+              <FaSearch />
+            </button>
+          </div>
+          {mainCitySuggestions.length > 0 && (
+            <ul className="absolute z-20 bg-white border border-gray-300 rounded-md mt-1 w-full max-h-40 overflow-y-auto shadow-lg">
+              {mainCitySuggestions.map((suggestion, index) => (
+                <li
+                  key={index}
+                  onClick={() => selectSuggestion(suggestion, 'mainCity', setMainCitySuggestions)}
+                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         {/* Description Field */}
         <div className="md:col-span-2">
@@ -398,7 +444,7 @@ const AddCollege = ({ handleClose }) => {
 
         {/* Buttons */}
         <div className="md:col-span-2 flex flex-col sm:flex-row justify-between gap-4">
-        <button
+          <button
             onClick={handleClose}
             className="w-full bg-black text-white py-2 rounded-md hover:bg-slate-800"
           >
@@ -410,7 +456,6 @@ const AddCollege = ({ handleClose }) => {
           >
             Submit College
           </button>
-         
         </div>
       </form>
     </div>

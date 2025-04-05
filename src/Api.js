@@ -17,6 +17,7 @@ export const collegeApi  = {
     getCollege : `${apiUrl}/college/gcollegebyid`,
     removeCollge : `${apiUrl}/college/dcollege`,
     createCourse : `${apiUrl}/college/ccourse `,
+    deleteCourse : `${apiUrl}/college/dcourse`,
     getCourses : `${apiUrl}/college/gcourse`,
     createSupport : `${apiUrl}/college/csupport`,
     getSupport : `${apiUrl}/college/gsupport`,
