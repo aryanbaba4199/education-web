@@ -12,7 +12,10 @@ const AddCollege = ({ handleClose }) => {
     university: '',
     address: '',
     mainCity: '',
+    campus_Highlight : '',
+    category: '',
     mobile: '',
+    path : '',
     courseIds: [],
     supportIds: [],
     fees: [],
@@ -20,6 +23,7 @@ const AddCollege = ({ handleClose }) => {
     videos: [],
   });
   const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [mainCitySuggestions, setMainCitySuggestions] = useState([]);
   const addressInputRef = useRef(null);
   const mainCityInputRef = useRef(null);
@@ -28,12 +32,50 @@ const AddCollege = ({ handleClose }) => {
   useEffect(() => {
     getCourses();
     getSupport();
+    getCategories();
     adjustTextareaHeight();
   }, []);
+
+  const getCategories = async () => {
+    try {
+      const res = await getterFunction(collegeApi.getCategory);
+      if (res.success) setCategories(res.data);
+    } catch (e) {
+      console.error('Error getting categories:', e);
+    }
+  };
 
   useEffect(() => {
     adjustTextareaHeight();
   }, [formData.description]);
+
+  const gendis = async () => {
+    try {
+      const data = {
+        collegeName: formData.name,
+        university: formData.university,
+        address: formData.address,
+      };
+  
+      const res = await posterFunction(collegeApi.generateDescription, data);
+  
+      if (res && res.success && typeof res.data === 'string') {
+        // Optional: Remove leading/trailing quotes or newlines
+        const cleanedDescription = res.data.trim();
+  
+        setFormData((prev) => ({
+          ...prev,
+          description: cleanedDescription,
+        }));
+      } else {
+        console.warn('Unexpected response format:', res);
+      }
+    } catch (e) {
+      console.error('Error in description generation:', e);
+    }
+  };
+  
+
 
   const adjustTextareaHeight = () => {
     const textarea = descriptionRef.current;
@@ -42,6 +84,8 @@ const AddCollege = ({ handleClose }) => {
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
   };
+
+  console.log('des is', formData.description)
 
   // Video handlers
   const handleAddVideo = (e) => {
@@ -164,9 +208,12 @@ const AddCollege = ({ handleClose }) => {
           address: '',
           mainCity: '',
           mobile: '',
+          campus_Highlight : '',
+          category : '',
           courseIds: [],
           supportIds: [],
           fees: [],
+          path : '',
           images: [],
           videos: [],
         });
@@ -212,14 +259,19 @@ const AddCollege = ({ handleClose }) => {
     setSuggestions([]);
   };
 
+ 
+
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <h2 className="text-2xl font-semibold mb-6">Add New College</h2>
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Basic Fields */}
-        {['name', 'university', 'mobile'].map((field) => (
+        {['name', 'university', 'mobile', 'campus_Highlight', 'path'].map((field) => (
           <div key={field} className="relative">
-            <label className="block text-gray-700 capitalize mb-2">{field}</label>
+            <label className="block text-gray-700 capitalize mb-2">
+              {field==='path' ? 'How to Reach ?' : field}
+              </label>
             <input
               type="text"
               name={field}
@@ -232,6 +284,26 @@ const AddCollege = ({ handleClose }) => {
         ))}
 
         {/* Address Field with Search Icon */}
+        <div className=' flex gap-8'>
+          <label className="block text-gray-700 capitalize mb-2">Select the Category</label>
+          <select 
+          className='px-4 rounded-md'
+          name= 'category'
+          required
+          value={formData.category}
+          onChange={(e)=>{
+            console.log('category', e.target.value);
+            setFormData((prev) => ({...prev, 
+              category: e.target.value 
+            }))
+          }}
+          >
+            <option value="">Select Category</option>
+            {categories.map((cat)=>(
+              <option key={cat._id} value={cat._id}>{cat.title}</option>
+            ))}
+          </select>
+        </div>
         <div className="relative">
           <label className="block text-gray-700 capitalize mb-2">Address</label>
           <div className="flex items-center">
@@ -305,7 +377,10 @@ const AddCollege = ({ handleClose }) => {
 
         {/* Description Field */}
         <div className="md:col-span-2">
+          <div className='flex items-center gap-4 '>
           <label className="block text-gray-700 capitalize mb-2">Description</label>
+          <button onClick={gendis} className='mb-2 px-4 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md'>Generate Description </button>
+          </div>
           <textarea
             name="description"
             value={formData.description}

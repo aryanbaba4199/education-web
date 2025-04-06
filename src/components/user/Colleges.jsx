@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPhone, FaWhatsapp, FaSchool, FaSearch } from 'react-icons/fa';
+import { FaPhone, FaWhatsapp, FaSchool, FaSearch, FaArrowRight } from 'react-icons/fa';
 import { collegeApi, getterFunction } from '../../Api'; // Adjust path as needed
 
 const College = () => {
@@ -92,8 +92,8 @@ const College = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="p-4">
-        <div className="relative max-w-lg mx-auto">
+      <div className="p-4 flex">
+        <div className="relative w-1/2 mx-auto">
           <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
           <input
             type="text"
@@ -102,6 +102,14 @@ const College = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-600"
           />
+        </div>
+        <div className='flex justify-center items-center bg-red-600 px-4 text-white hover:bg-red-700'>
+          <button onClick={()=>{
+            localStorage.removeItem('edutoken');
+            localStorage.removeItem('eduadmintoken');
+            navigate('/');
+          }} className=' text-white px-4 py-1'>Log out</button>
+          <FaArrowRight/>
         </div>
       </div>
 

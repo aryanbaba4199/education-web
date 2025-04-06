@@ -13,6 +13,7 @@ import AddCollege from "./CollegeForm";
 import AddCourse from "./CourseForm";
 import { collegeApi, getterFunction, removerFunction } from "../../../Api";
 import Swal from "sweetalert2";
+import Category from "./Category";
 
 const CollegeList = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,6 +23,7 @@ const CollegeList = () => {
   const [showCollege, setShowCollege] = useState(false);
   const [colleges, setColleges] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [showCat, setShowCat] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +46,7 @@ const CollegeList = () => {
     setShowSuport(false);
     setShowCourse(false);
     setShowCollege(false);
+    setShowCat(false);
   };
 
   const getColleges = async () => {
@@ -139,120 +142,134 @@ const CollegeList = () => {
           {showCollege ? (
             <AddCollege handleClose={handleClose} />
           ) : (
-            <div className="container mx-auto px-4 py-6 flex-1">
-              {/* Search Bar */}
-              <div className="relative mb-6">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search colleges by name or location"
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+            <>
+              {showCat ? (
+                <Category handleClose={handleClose} />
+              ) : (
+                <div className="container mx-auto px-4 py-6 flex-1">
+                  {/* Search Bar */}
+                  <div className="relative mb-6">
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search colleges by name or location"
+                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
 
-              {/* Controls */}
-              <div className="block justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold">Colleges</h2>
-                <div className="space-x-2 flex md:flex-col flex-col gap-4 mt-12 items-center">
-                  <button
-                    onClick={() => setShowSuport(true)}
-                    className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
-                  >
-                    <FaPlus className="mr-2" /> Add Support
-                  </button>
-                  <button
-                    onClick={() => setShowCourse(true)}
-                    className="inline-flex w-48  items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
-                  >
-                    <FaPlus className="mr-2" /> Add Course
-                  </button>
-                  <button
-                    onClick={() => setShowCollege(true)}
-                    className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
-                  >
-                    <FaPlus className="mr-2" /> Add College
-                  </button>
-                </div>
-              </div>
-
-              {/* College Grid */}
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredColleges.map((college) => (
-                  <div
-                    key={college._id}
-                    className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow relative"
-                  >
-                    {/* College Image */}
-                    {college.images && college.images.length > 0 && (
-                      <img
-                        src={college.images[0]}
-                        alt={college.name}
-                        className="w-full h-40 object-cover rounded-t-lg mb-4"
-                      />
-                    )}
-
-                    {/* College Details */}
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                      {college.name}
-                    </h3>
-                    <p className="text-gray-600 mb-1">
-                      <span className="font-medium">University:</span>{" "}
-                      {college.university}
-                    </p>
-                    <p className="text-gray-600 mb-1">
-                      <span className="font-medium">Address:</span>{" "}
-                      {college.address}
-                    </p>
-                    <p className="text-gray-600 mb-1">
-                      <span className="font-medium">City:</span>{" "}
-                      {college.mainCity}
-                    </p>
-                    <p className="text-gray-600 mb-1 flex items-center">
-                      <FaPhone className="mr-2 text-blue-500" />
-                      {college.mobile}
-                    </p>
-
-                    {/* Courses */}
-                    {college.courseIds && college.courseIds.length > 0 && (
-                      <div className="mt-2">
-                        <p className="text-gray-600 font-medium">Courses:</p>
-                        <ul className="list-disc list-inside text-gray-600 text-sm">
-                          {college.courseIds.map((courseId, index) => (
-                            <li key={courseId}>
-                              {courses?.find((c) => c._id === courseId)
-                                ?.title || courseId}
-                              {college.fees &&
-                                college.fees[index] &&
-                                ` - ₹ ${college.fees[index]}/-`}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="absolute top-2 right-2 flex space-x-2">
+                  {/* Controls */}
+                  <div className="block justify-between items-center mb-6">
+                    <h2 className="text-2xl font-semibold">Colleges</h2>
+                    <div className="space-x-2 flex md:flex-col flex-col gap-4 mt-12 items-center">
                       <button
-                        onClick={() => handleEdit(college._id)}
-                        className="p-2 text-blue-600 hover:text-blue-800"
-                        title="Edit College"
+                        onClick={() => setShowSuport(true)}
+                        className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
                       >
-                        <FaEdit size={20} />
+                        <FaPlus className="mr-2" /> Add Support
                       </button>
                       <button
-                        onClick={() => handleDelete(college._id)}
-                        className="p-2 text-red-600 hover:text-red-800"
-                        title="Delete College"
+                        onClick={() => setShowCourse(true)}
+                        className="inline-flex w-48  items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
                       >
-                        <FaTrash size={20} />
+                        <FaPlus className="mr-2" /> Add Course
+                      </button>
+                      <button
+                        onClick={() => setShowCat(true)}
+                        className="inline-flex w-48  items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+                      >
+                        <FaPlus className="mr-2" /> Add Category
+                      </button>
+                      <button
+                        onClick={() => setShowCollege(true)}
+                        className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+                      >
+                        <FaPlus className="mr-2" /> Add College
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  {/* College Grid */}
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredColleges.map((college) => (
+                      <div
+                        key={college._id}
+                        className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow relative"
+                      >
+                        {/* College Image */}
+                        {college.images && college.images.length > 0 && (
+                          <img
+                            src={college.images[0]}
+                            alt={college.name}
+                            className="w-full h-40 object-cover rounded-t-lg mb-4"
+                          />
+                        )}
+
+                        {/* College Details */}
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                          {college.name}
+                        </h3>
+                        <p className="text-gray-600 mb-1">
+                          <span className="font-medium">University:</span>{" "}
+                          {college.university}
+                        </p>
+                        <p className="text-gray-600 mb-1">
+                          <span className="font-medium">Address:</span>{" "}
+                          {college.address}
+                        </p>
+                        <p className="text-gray-600 mb-1">
+                          <span className="font-medium">City:</span>{" "}
+                          {college.mainCity}
+                        </p>
+                        <p className="text-gray-600 mb-1 flex items-center">
+                          <FaPhone className="mr-2 text-blue-500" />
+                          {college.mobile}
+                        </p>
+
+                        {/* Courses */}
+                        {college.courseIds && college.courseIds.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-gray-600 font-medium">
+                              Courses:
+                            </p>
+                            <ul className="list-disc list-inside text-gray-600 text-sm">
+                              {college.courseIds.map((courseId, index) => (
+                                <li key={courseId}>
+                                  {courses?.find((c) => c._id === courseId)
+                                    ?.title || courseId}
+                                  {college.fees &&
+                                    college.fees[index] &&
+                                    ` - ₹ ${college.fees[index]}/-`}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="absolute top-2 right-2 flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(college._id)}
+                            className="p-2 text-blue-600 hover:text-blue-800"
+                            title="Edit College"
+                          >
+                            <FaEdit size={20} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(college._id)}
+                            className="p-2 text-red-600 hover:text-red-800"
+                            title="Delete College"
+                          >
+                            <FaTrash size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

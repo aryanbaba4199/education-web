@@ -27,7 +27,7 @@ const Home = () => {
   };
 
   useEffect(() => {
-    // verifyToken();
+    verifyToken();
     getSlide();
   }, []);
 
@@ -58,8 +58,12 @@ const Home = () => {
   };
 
   const verifyToken = async () => {
-    const token = localStorage.getItem("edutoken");
+    const token = localStorage.getItem("eduadmintoken");
+    const userToken = localStorage.getItem("edutoken");
+    console.log("Verifying", token, userToken);
     if (token) {
+      navigate("/admin/dashboard");
+    }else if(userToken){
       navigate("/colleges");
     }
   };
@@ -122,6 +126,8 @@ const Home = () => {
   const handleWhatsApp = () => {
     window.open(`https://wa.me/${advertiser.whatsapp}`, "_blank");
   };
+
+  
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">

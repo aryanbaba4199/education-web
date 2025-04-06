@@ -25,6 +25,12 @@ export const collegeApi  = {
     createSlide : `${apiUrl}/college/cslide`,
     dashboard : `${apiUrl}/college/dashboard`,
     suggestLocation : `${apiUrl}/college/suggestLocation`,
+    generateDescription : `${apiUrl}/college/helper/generateDescription`,
+    
+    createCategory : `${apiUrl}/college/ccategory`,
+    getCategory : `${apiUrl}/college/gcategory`,
+    removeCategory : `${apiUrl}/college/dcategory`,
+    updateCategory : `${apiUrl}/college/ucategory`,
 
 }
 
