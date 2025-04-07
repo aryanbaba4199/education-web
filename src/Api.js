@@ -15,6 +15,7 @@ export const collegeApi  = {
     createCollege : `${apiUrl}/college/ccollege`,
     getColleges : `${apiUrl}/college/gcollege`,
     getCollege : `${apiUrl}/college/gcollegebyid`,
+    updateCollege : `${apiUrl}/college/ucollege`,
     removeCollge : `${apiUrl}/college/dcollege`,
     createCourse : `${apiUrl}/college/ccourse `,
     deleteCourse : `${apiUrl}/college/dcourse`,
@@ -36,6 +37,9 @@ export const collegeApi  = {
     getTag : `${apiUrl}/college/gtag`,
     removeTag : `${apiUrl}/college/dtag`,
     updateTag : `${apiUrl}/college/utag`,
+    getAppDetails : `${apiUrl}/college/gappdetails`,
+    createAppDetails : `${apiUrl}/college/cappdetails`,
+    updateAppDetails : `${apiUrl}/college/uappdetails`,
 
 }
 

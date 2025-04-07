@@ -11,6 +11,7 @@ import Dashboard from "./components/admin/dashboard/Dashboard";
 import Users from "./components/admin/users/Users";
 import Slider from "./components/admin/slider/Slider";
 import ErrorBoundaryWrapper from "./components/user/ErrorBoundaryWrapper";
+import PrivacyPolicy from "./components/user/Privacy";
 
 
 const ProtectedRoute = ({children})=>{
@@ -46,6 +47,7 @@ const App = () => {
       
         <Route path="/college-details" element={<CollegeDetails />} />
         <Route path="/colleges" element={<College />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
 
         <Route path="/admin/college" element={<ProtectedRoute><CollegeList /></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

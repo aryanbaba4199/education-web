@@ -29,7 +29,20 @@ const Home = () => {
   useEffect(() => {
     verifyToken();
     getSlide();
+    getAppDetails();
   }, []);
+
+
+  const getAppDetails = async () => {
+    try{
+      const res = await getterFunction(collegeApi.getAppDetails);
+      if(res.success){
+        localStorage.setItem('appDetails', JSON.stringify(res.data));
+      }
+    }catch(e){
+      console.error("Error getting app details", e);
+    }
+  }
 
   useEffect(() => {
     if (slides.length > 0) {

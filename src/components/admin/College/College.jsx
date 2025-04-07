@@ -6,6 +6,8 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
+  FaAppStore,
+  FaSchool,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import SupportForm from "./SupportForm";
@@ -15,6 +17,7 @@ import { collegeApi, getterFunction, removerFunction } from "../../../Api";
 import Swal from "sweetalert2";
 import Category from "./Category";
 import Tag from "./Tag";
+import AppDetails from "./AppDetails";
 
 const CollegeList = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,6 +30,7 @@ const CollegeList = () => {
   const [courses, setCourses] = useState([]);
   const [editMode, setEditMode] = useState(null); // Holds the college being edited
   const [showCat, setShowCat] = useState(false);
+  const [showAppDetails, setShowAppDetails] = useState(false)
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,6 +55,7 @@ const CollegeList = () => {
     setShowCollege(false);
     setShowCat(false);
     setShowTag(false);
+    setShowAppDetails(false)
     setEditMode(null); // Reset edit mode when closing
   };
 
@@ -58,6 +63,7 @@ const CollegeList = () => {
     try {
       const res = await getterFunction(collegeApi.getColleges);
       if (res.success) {
+        console.log(res.data.map(item=>item.rank));
         setColleges(res.data);
       }
     } catch (error) {
@@ -137,7 +143,7 @@ const CollegeList = () => {
         <Category handleClose={handleClose} />
       ) : showTag ? (
         <Tag handleClose={handleClose} />
-      ) : (
+      ) : showAppDetails ? (<AppDetails handleClose={handleClose}/>) : (
         <div className="container mx-auto px-4 py-6 flex-1">
           {/* Search Bar */}
           <div className="relative mb-6">
@@ -154,7 +160,7 @@ const CollegeList = () => {
           {/* Controls */}
           <div className="block justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Colleges</h2>
-            <div className="space-x-2 flex md:flex-col flex-col gap-4 mt-12 items-center">
+            <div className="grid md:grid-cols-4  grid-cols-2 gap-4 mt-12 items-center">
               <button
                 onClick={() => setShowSuport(true)}
                 className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
@@ -181,12 +187,21 @@ const CollegeList = () => {
               </button>
               <button
                 onClick={() => {
+               
+                  setShowAppDetails(true);
+                }}
+                className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+              >
+                <FaAppStore className="mr-2" /> App Details
+              </button>
+              <button
+                onClick={() => {
                   setEditMode(null); // Ensure editMode is null for adding new college
                   setShowCollege(true);
                 }}
                 className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
               >
-                <FaPlus className="mr-2" /> Add College
+                <FaSchool className="mr-2" /> Add College
               </button>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { FaSearch } from 'react-icons/fa';
-import { collegeApi, getterFunction, posterFunction } from '../../../Api';
+import { collegeApi, getterFunction, posterFunction, updaterFunction } from '../../../Api';
 import Swal from 'sweetalert2';
 
 const AddCollege = ({ handleClose, editMode }) => {
@@ -51,6 +51,7 @@ const AddCollege = ({ handleClose, editMode }) => {
     };
     fetchData();
     if (editMode) {
+      console.log('Edit mode data:', editMode);
       setFormData({
         ...editMode,
         selectedTags: editMode.selectedTags || [], // Ensure arrays are set
@@ -156,9 +157,25 @@ const AddCollege = ({ handleClose, editMode }) => {
   };
 
   const handleUpdate = async (formData) => {
-    console.log('Updating college with data:', formData);
-    // Placeholder for actual update logic
-    // Replace this with your updaterFunction call when ready
+    try{
+      const res = await updaterFunction(`${collegeApi.updateCollege}/${formData._id}`, formData);
+      if (res?.success) {
+        Swal.fire({
+          title: 'College Updated Successfully!',
+          icon:'success',
+          confirmButtonText: 'Okay',
+        });
+        // handleClose();
+      }
+    }catch(e){
+      console.error('Error updating college:', e);
+      Swal.fire({
+        title: 'Error updating college!',
+        icon: 'error',
+        confirmButtonText: 'Okay',
+      });
+    }
+
   };
 
   const handleSubmit = async (e) => {
@@ -166,11 +183,8 @@ const AddCollege = ({ handleClose, editMode }) => {
     try {
       if (editMode) {
         await handleUpdate(formData);
-        Swal.fire({
-          title: 'College Updated Successfully!',
-          icon: 'success',
-          confirmButtonText: 'Okay',
-        });
+        return;
+       
       } else {
         const res = await posterFunction(collegeApi.createCollege, formData);
         if (res?.success) {
