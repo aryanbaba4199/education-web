@@ -32,6 +32,11 @@ export const collegeApi  = {
     removeCategory : `${apiUrl}/college/dcategory`,
     updateCategory : `${apiUrl}/college/ucategory`,
 
+    createTag : `${apiUrl}/college/ctag`,
+    getTag : `${apiUrl}/college/gtag`,
+    removeTag : `${apiUrl}/college/dtag`,
+    updateTag : `${apiUrl}/college/utag`,
+
 }
 
 export const distanceApi = {
