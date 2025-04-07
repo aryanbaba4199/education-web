@@ -99,6 +99,7 @@ const Home = () => {
               icon: "success",
             });
             localStorage.setItem("eduadmintoken", res.data);
+            localStorage.setItem("edutoken", res.data);
             navigate("/admin/dashboard");
           }
           return;

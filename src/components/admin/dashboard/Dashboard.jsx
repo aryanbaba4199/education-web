@@ -44,7 +44,17 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+      <div className='flex justify-between items-center mb-6'>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+      <div className='flex gap-4 px-4'>
+      <button onClick={()=>navigate('/colleges')} className='bg-gray-800 hover:bg-slate-700 px-2 py-1 rounded-md text-white'>Switch Account</button>
+      <button onClick={()=>{
+        localStorage.removeItem('eduadmintoken');
+        localStorage.removeItem('eduutoken');
+        navigate('/');
+      }} className='bg-red-600 hover:bg-red-700 px-2 py-1 rounded-md text-white'>Log out</button>
+      </div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
