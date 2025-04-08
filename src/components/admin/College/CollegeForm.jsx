@@ -13,10 +13,13 @@ import {
   RadioGroup,
   FormControlLabel,
   TextField,
+  Dialog,
+  CircularProgress,
 } from "@mui/material";
 
 const AddCollege = ({ handleClose, editMode }) => {
   const [courses, setCourses] = useState([]);
+  const [loader, setLoader] = useState(false);
   const [support, setSupport] = useState([]);
   const [tags, setTags] = useState([]);
   const [feeTags, setFeesTags] = useState([]);
@@ -36,7 +39,7 @@ const AddCollege = ({ handleClose, editMode }) => {
     selectedTags: [],
     courseIds: [],
     supportIds: [],
-    fees: [], // Now an array of objects: { amount, unit, duration }
+    fees: [], // Array of objects: [{ unit, duration, amounts: [] }]
     images: [],
     videos: [],
   });
@@ -68,13 +71,12 @@ const AddCollege = ({ handleClose, editMode }) => {
     };
     fetchData();
     if (editMode) {
-      console.log("Edit mode data:", editMode);
       setFormData({
         ...editMode,
         selectedTags: editMode.selectedTags || [],
         courseIds: editMode.courseIds || [],
         supportIds: editMode.supportIds || [],
-        fees: editMode.fees || [], // Expecting array of { amount, unit, duration }
+        fees: editMode.fees || [],
         images: editMode.images || [],
         videos: editMode.videos || [],
         feeTags: editMode.feeTags || [],
@@ -96,6 +98,7 @@ const AddCollege = ({ handleClose, editMode }) => {
   };
 
   const generateDescription = async () => {
+    setLoader("Generating...");
     try {
       const data = {
         collegeName: formData.name,
@@ -109,9 +112,11 @@ const AddCollege = ({ handleClose, editMode }) => {
     } catch (e) {
       console.error("Error generating description:", e);
     }
+    setLoader(null);
   };
 
   const correctPath = async (words) => {
+    setLoader("Correcting...");
     try {
       const data = {
         collegeName: formData.name,
@@ -126,10 +131,12 @@ const AddCollege = ({ handleClose, editMode }) => {
     } catch (e) {
       console.error("Error in correction ", e);
     }
+    setLoader(null);
   };
 
   const fetchSuggestions = async (input, setSuggestions) => {
     if (!input) return setSuggestions([]);
+
     try {
       const res = await getterFunction(
         `https://education-1064837086369.asia-south1.run.app/college/suggestLocation?input=${encodeURIComponent(
@@ -178,10 +185,25 @@ const AddCollege = ({ handleClose, editMode }) => {
     });
   };
 
-  const handleFeeChange = (index, key, value) => {
+  const handleFeeChange = (courseIndex, key, value, feeIndex = null) => {
     setFormData((prev) => {
       const updatedFees = [...prev.fees];
-      updatedFees[index] = { ...updatedFees[index], [key]: value };
+      if (key === "amounts" && feeIndex !== null) {
+        updatedFees[courseIndex].amounts[feeIndex] = value;
+      } else {
+        updatedFees[courseIndex] = {
+          ...updatedFees[courseIndex],
+          [key]: value,
+        };
+        if (key === "duration" && value) {
+          const num = parseInt(value) || 0;
+          updatedFees[courseIndex].amounts = Array(num).fill("");
+        }
+        if (key === "unit" && value === "Course") {
+          updatedFees[courseIndex].duration = "";
+          updatedFees[courseIndex].amounts = [""];
+        }
+      }
       return { ...prev, fees: updatedFees };
     });
   };
@@ -198,25 +220,28 @@ const AddCollege = ({ handleClose, editMode }) => {
         courseIds: selectedOptions,
         supportIds: Array(selectedOptions.length).fill(""),
         fees: Array(selectedOptions.length).fill({
-          amount: "",
           unit: "Year",
           duration: "",
-        }), // Initialize fees as objects
+          amounts: [],
+        }),
       }));
     } else if (name.startsWith("supportId-")) {
       const index = parseInt(name.split("-")[1]);
       handleArrayChange("supportIds", index, value);
-    } else if (name.startsWith("fee-amount-")) {
-      const index = parseInt(name.split("-")[2]);
-      handleFeeChange(index, "amount", value);
     } else if (name.startsWith("fee-unit-")) {
       const index = parseInt(name.split("-")[2]);
       handleFeeChange(index, "unit", value);
-      // Reset duration if switching to Course
-      if (value === "Course") handleFeeChange(index, "duration", "");
     } else if (name.startsWith("fee-duration-")) {
       const index = parseInt(name.split("-")[2]);
       handleFeeChange(index, "duration", value);
+    } else if (name.startsWith("fee-amount-")) {
+      const [_, __, courseIndex, feeIndex] = name.split("-");
+      handleFeeChange(
+        parseInt(courseIndex),
+        "amounts",
+        value,
+        parseInt(feeIndex)
+      );
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -228,6 +253,7 @@ const AddCollege = ({ handleClose, editMode }) => {
   };
 
   const handleUpdate = async (formData) => {
+    setLoader("Updating...");
     try {
       const res = await updaterFunction(
         `${collegeApi.updateCollege}/${formData._id}`,
@@ -249,15 +275,31 @@ const AddCollege = ({ handleClose, editMode }) => {
         confirmButtonText: "Okay",
       });
     }
+    setLoader(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoader("submitting...");
     try {
+      const transformedFees = formData.fees
+        .map((fee) => {
+          if (fee.unit === "Course") {
+            return { amount: fee.amounts[0] };
+          }
+          return fee.amounts.map((amount, idx) => ({
+            period: `${fee.unit} ${idx + 1}`,
+            amount,
+          }));
+        })
+        .flat();
+
+      const payload = { ...formData, fees: transformedFees };
+
       if (editMode) {
-        await handleUpdate(formData);
+        await handleUpdate(payload);
       } else {
-        const res = await posterFunction(collegeApi.createCollege, formData);
+        const res = await posterFunction(collegeApi.createCollege, payload);
         if (res?.success) {
           Swal.fire({
             title: "College Added Successfully!",
@@ -287,6 +329,7 @@ const AddCollege = ({ handleClose, editMode }) => {
         }
       }
     } catch (e) {
+      setLoader(null);
       console.error("Error submitting college:", e);
       Swal.fire({
         title: "Error",
@@ -464,11 +507,12 @@ const AddCollege = ({ handleClose, editMode }) => {
               Description
             </label>
             <button
+              disabled={loader}
               type="button"
               onClick={generateDescription}
               className="mb-2 px-4 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md"
             >
-              Generate Description
+              {loader ? "Generating..." : "Generate Description"}
             </button>
           </div>
           <textarea
@@ -535,20 +579,8 @@ const AddCollege = ({ handleClose, editMode }) => {
                   </div>
                   <div>
                     <label className="block text-gray-600 text-sm mb-1">
-                      Fee
+                      Fee Structure
                     </label>
-                    <TextField
-                      type="number"
-                      name={`fee-amount-${index}`}
-                      value={formData.fees[index]?.amount || ""}
-                      onChange={handleChange}
-                      placeholder="Enter course fee"
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      inputProps={{ min: 0 }}
-                      required
-                    />
                     <RadioGroup
                       row
                       name={`fee-unit-${index}`}
@@ -588,6 +620,50 @@ const AddCollege = ({ handleClose, editMode }) => {
                         size="small"
                         fullWidth
                         inputProps={{ min: 1 }}
+                        required
+                        className="mt-2"
+                      />
+                    )}
+                    {(formData.fees[index]?.unit === "Year" ||
+                      formData.fees[index]?.unit === "Semester") &&
+                      formData.fees[index]?.duration && (
+                        <div className="mt-2 space-y-2">
+                          {Array.from(
+                            {
+                              length:
+                                parseInt(formData.fees[index]?.duration) || 0,
+                            },
+                            (_, i) => (
+                              <TextField
+                                key={i}
+                                type="number"
+                                name={`fee-amount-${index}-${i}`}
+                                value={formData.fees[index]?.amounts[i] || ""}
+                                onChange={handleChange}
+                                label={`${formData.fees[index]?.unit} ${
+                                  i + 1
+                                } Fee`}
+                                variant="outlined"
+                                size="small"
+                                fullWidth
+                                inputProps={{ min: 0 }}
+                                required
+                              />
+                            )
+                          )}
+                        </div>
+                      )}
+                    {formData.fees[index]?.unit === "Course" && (
+                      <TextField
+                        type="number"
+                        name={`fee-amount-${index}-0`}
+                        value={formData.fees[index]?.amounts[0] || ""}
+                        onChange={handleChange}
+                        label="Course Fee"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        inputProps={{ min: 0 }}
                         required
                         className="mt-2"
                       />
@@ -641,6 +717,12 @@ const AddCollege = ({ handleClose, editMode }) => {
           </button>
         </div>
       </div>
+      <Dialog fullWidth open={loader}>
+        <div className="bg-transparent min-h-screen w-full flex flex-col justify-center items-center bg-s">
+          <CircularProgress color="#15892e" />
+          <h2>{loader ?? "Loading..."}</h2>
+        </div>
+      </Dialog>
     </div>
   );
 };
