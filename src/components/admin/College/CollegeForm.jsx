@@ -1,28 +1,42 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { FaSearch } from 'react-icons/fa';
-import { collegeApi, getterFunction, posterFunction, updaterFunction } from '../../../Api';
-import Swal from 'sweetalert2';
+import React, { useEffect, useState, useRef } from "react";
+import { FaSearch } from "react-icons/fa";
+import {
+  collegeApi,
+  getterFunction,
+  posterFunction,
+  updaterFunction,
+} from "../../../Api";
+import Swal from "sweetalert2";
+import {
+  Checkbox,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  TextField,
+} from "@mui/material";
 
 const AddCollege = ({ handleClose, editMode }) => {
   const [courses, setCourses] = useState([]);
   const [support, setSupport] = useState([]);
   const [tags, setTags] = useState([]);
+  const [feeTags, setFeesTags] = useState([]);
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    university: '',
-    address: '',
-    mainCity: '',
-    campus_Highlight: '',
-    category: '',
-    mobile: '',
-    path: '',
-    rank : 0,
+    name: "",
+    description: "",
+    university: "",
+    address: "",
+    mainCity: "",
+    campus_Highlight: "",
+    category: "",
+    mobile: "",
+    path: "",
+    feeTags: [],
+    rank: 0,
     selectedTags: [],
     courseIds: [],
     supportIds: [],
-    fees: [],
+    fees: [], // Now an array of objects: { amount, unit, duration }
     images: [],
     videos: [],
   });
@@ -35,31 +49,35 @@ const AddCollege = ({ handleClose, editMode }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [courseRes, supportRes, tagRes, categoryRes] = await Promise.all([
-          getterFunction(collegeApi.getCourses),
-          getterFunction(collegeApi.getSupport),
-          getterFunction(collegeApi.getTag),
-          getterFunction(collegeApi.getCategory),
-        ]);
+        const [courseRes, supportRes, tagRes, categoryRes, feesTagres] =
+          await Promise.all([
+            getterFunction(collegeApi.getCourses),
+            getterFunction(collegeApi.getSupport),
+            getterFunction(collegeApi.getTag),
+            getterFunction(collegeApi.getCategory),
+            getterFunction(collegeApi.getFeesTag),
+          ]);
         if (courseRes.success) setCourses(courseRes.data);
         if (supportRes.success) setSupport(supportRes.data);
         if (tagRes.success) setTags(tagRes.data);
         if (categoryRes.success) setCategories(categoryRes.data);
+        if (feesTagres.success) setFeesTags(feesTagres.data);
       } catch (e) {
-        console.error('Error fetching data:', e);
+        console.error("Error fetching data:", e);
       }
     };
     fetchData();
     if (editMode) {
-      console.log('Edit mode data:', editMode);
+      console.log("Edit mode data:", editMode);
       setFormData({
         ...editMode,
-        selectedTags: editMode.selectedTags || [], // Ensure arrays are set
+        selectedTags: editMode.selectedTags || [],
         courseIds: editMode.courseIds || [],
         supportIds: editMode.supportIds || [],
-        fees: editMode.fees || [],
+        fees: editMode.fees || [], // Expecting array of { amount, unit, duration }
         images: editMode.images || [],
         videos: editMode.videos || [],
+        feeTags: editMode.feeTags || [],
       });
     }
     adjustTextareaHeight();
@@ -72,20 +90,41 @@ const AddCollege = ({ handleClose, editMode }) => {
   const adjustTextareaHeight = () => {
     const textarea = descriptionRef.current;
     if (textarea) {
-      textarea.style.height = 'auto';
+      textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
   };
 
   const generateDescription = async () => {
     try {
-      const data = { collegeName: formData.name, university: formData.university, address: formData.address };
+      const data = {
+        collegeName: formData.name,
+        university: formData.university,
+        address: formData.address,
+      };
       const res = await posterFunction(collegeApi.generateDescription, data);
-      if (res?.success && typeof res.data === 'string') {
+      if (res?.success && typeof res.data === "string") {
         setFormData((prev) => ({ ...prev, description: res.data.trim() }));
       }
     } catch (e) {
-      console.error('Error generating description:', e);
+      console.error("Error generating description:", e);
+    }
+  };
+
+  const correctPath = async (words) => {
+    try {
+      const data = {
+        collegeName: formData.name,
+        university: formData.university,
+        address: formData.university,
+        reach: words,
+      };
+      const res = await posterFunction(collegeApi.correctPath, data);
+      if (res.success && typeof res.data === "string") {
+        setFormData((prev) => ({ ...prev, path: res.data.trim() }));
+      }
+    } catch (e) {
+      console.error("Error in correction ", e);
     }
   };
 
@@ -93,12 +132,18 @@ const AddCollege = ({ handleClose, editMode }) => {
     if (!input) return setSuggestions([]);
     try {
       const res = await getterFunction(
-        `https://education-1064837086369.asia-south1.run.app/college/suggestLocation?input=${encodeURIComponent(input)}&type=geocode`
+        `https://education-1064837086369.asia-south1.run.app/college/suggestLocation?input=${encodeURIComponent(
+          input
+        )}&type=geocode`
       );
       const data = res.data || res;
-      setSuggestions(data?.predictions?.status === 'OK' ? data.predictions.map((pred) => pred.description) : []);
+      setSuggestions(
+        data?.predictions?.status === "OK"
+          ? data.predictions.map((pred) => pred.description)
+          : []
+      );
     } catch (e) {
-      console.error('Error fetching suggestions:', e);
+      console.error("Error fetching suggestions:", e);
       setSuggestions([]);
     }
   };
@@ -114,12 +159,15 @@ const AddCollege = ({ handleClose, editMode }) => {
 
   const handleArrayAdd = (e, field) => {
     e.preventDefault();
-    setFormData((prev) => ({ ...prev, [field]: [...prev[field], ''] }));
+    setFormData((prev) => ({ ...prev, [field]: [...prev[field], ""] }));
   };
 
   const handleArrayRemove = (e, field, index) => {
     e.preventDefault();
-    setFormData((prev) => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index),
+    }));
   };
 
   const handleArrayChange = (field, index, value) => {
@@ -130,22 +178,45 @@ const AddCollege = ({ handleClose, editMode }) => {
     });
   };
 
+  const handleFeeChange = (index, key, value) => {
+    setFormData((prev) => {
+      const updatedFees = [...prev.fees];
+      updatedFees[index] = { ...updatedFees[index], [key]: value };
+      return { ...prev, fees: updatedFees };
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'courseIds') {
-      const selectedOptions = Array.from(e.target.selectedOptions, (option) => option.value);
+    if (name === "courseIds") {
+      const selectedOptions = Array.from(
+        e.target.selectedOptions,
+        (option) => option.value
+      );
       setFormData((prev) => ({
         ...prev,
         courseIds: selectedOptions,
-        supportIds: Array(selectedOptions.length).fill(''),
-        fees: Array(selectedOptions.length).fill(''),
+        supportIds: Array(selectedOptions.length).fill(""),
+        fees: Array(selectedOptions.length).fill({
+          amount: "",
+          unit: "Year",
+          duration: "",
+        }), // Initialize fees as objects
       }));
-    } else if (name.startsWith('supportId-')) {
-      const index = parseInt(name.split('-')[1]);
-      handleArrayChange('supportIds', index, value);
-    } else if (name.startsWith('fee-')) {
-      const index = parseInt(name.split('-')[1]);
-      handleArrayChange('fees', index, value);
+    } else if (name.startsWith("supportId-")) {
+      const index = parseInt(name.split("-")[1]);
+      handleArrayChange("supportIds", index, value);
+    } else if (name.startsWith("fee-amount-")) {
+      const index = parseInt(name.split("-")[2]);
+      handleFeeChange(index, "amount", value);
+    } else if (name.startsWith("fee-unit-")) {
+      const index = parseInt(name.split("-")[2]);
+      handleFeeChange(index, "unit", value);
+      // Reset duration if switching to Course
+      if (value === "Course") handleFeeChange(index, "duration", "");
+    } else if (name.startsWith("fee-duration-")) {
+      const index = parseInt(name.split("-")[2]);
+      handleFeeChange(index, "duration", value);
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -157,25 +228,27 @@ const AddCollege = ({ handleClose, editMode }) => {
   };
 
   const handleUpdate = async (formData) => {
-    try{
-      const res = await updaterFunction(`${collegeApi.updateCollege}/${formData._id}`, formData);
+    try {
+      const res = await updaterFunction(
+        `${collegeApi.updateCollege}/${formData._id}`,
+        formData
+      );
       if (res?.success) {
         Swal.fire({
-          title: 'College Updated Successfully!',
-          icon:'success',
-          confirmButtonText: 'Okay',
+          title: "College Updated Successfully!",
+          icon: "success",
+          confirmButtonText: "Okay",
         });
-        // handleClose();
+        handleClose();
       }
-    }catch(e){
-      console.error('Error updating college:', e);
+    } catch (e) {
+      console.error("Error updating college:", e);
       Swal.fire({
-        title: 'Error updating college!',
-        icon: 'error',
-        confirmButtonText: 'Okay',
+        title: "Error updating college!",
+        icon: "error",
+        confirmButtonText: "Okay",
       });
     }
-
   };
 
   const handleSubmit = async (e) => {
@@ -183,52 +256,62 @@ const AddCollege = ({ handleClose, editMode }) => {
     try {
       if (editMode) {
         await handleUpdate(formData);
-        return;
-       
       } else {
         const res = await posterFunction(collegeApi.createCollege, formData);
         if (res?.success) {
           Swal.fire({
-            title: 'College Added Successfully!',
-            icon: 'success',
-            confirmButtonText: 'Okay',
+            title: "College Added Successfully!",
+            icon: "success",
+            confirmButtonText: "Okay",
           });
+          setFormData({
+            name: "",
+            description: "",
+            university: "",
+            address: "",
+            mainCity: "",
+            campus_Highlight: "",
+            category: "",
+            mobile: "",
+            path: "",
+            rank: 0,
+            feeTags: [],
+            selectedTags: [],
+            courseIds: [],
+            supportIds: [],
+            fees: [],
+            images: [],
+            videos: [],
+          });
+          handleClose();
         }
       }
-      // Reset form and close
-      setFormData({
-        name: '',
-        description: '',
-        university: '',
-        address: '',
-        mainCity: '',
-        campus_Highlight: '',
-        category: '',
-        mobile: '',
-        path: '',
-        rank : 0,
-        selectedTags: [],
-        courseIds: [],
-        supportIds: [],
-        fees: [],
-        images: [],
-        videos: [],
-      });
-      handleClose();
     } catch (e) {
-      console.error('Error submitting college:', e);
+      console.error("Error submitting college:", e);
       Swal.fire({
-        title: 'Error',
-        text: `Failed to ${editMode ? 'update' : 'add'} college. Please try again.`,
-        icon: 'error',
-        confirmButtonText: 'Okay',
+        title: "Error",
+        text: `Failed to ${
+          editMode ? "update" : "add"
+        } college. Please try again.`,
+        icon: "error",
+        confirmButtonText: "Okay",
       });
     }
   };
 
   const renderInput = (field, label, required = true) => (
     <div className="relative">
-      <label className="block text-gray-700 capitalize mb-2">{label}</label>
+      <div className="flex gap-4 items-center justify-start">
+        <label className="block text-gray-700 capitalize mb-2">{label}</label>
+        {field === "path" && (
+          <button
+            onClick={() => correctPath(formData.path)}
+            className="mb-2 bg-slate-800 hover:bg-slate-700 px-4 py-1 rounded-md text-white"
+          >
+            Correct
+          </button>
+        )}
+      </div>
       <input
         type="text"
         name={field}
@@ -265,7 +348,9 @@ const AddCollege = ({ handleClose, editMode }) => {
           {suggestions.map((suggestion, index) => (
             <li
               key={index}
-              onClick={() => selectSuggestion(suggestion, field, setSuggestions)}
+              onClick={() =>
+                selectSuggestion(suggestion, field, setSuggestions)
+              }
               className="p-2 hover:bg-gray-100 cursor-pointer"
             >
               {suggestion}
@@ -309,17 +394,21 @@ const AddCollege = ({ handleClose, editMode }) => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <h2 className="text-2xl font-semibold mb-6">{editMode ? 'Edit College' : 'Add New College'}</h2>
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
-        {renderInput('name', 'Name')}
-        {renderInput('university', 'University')}
-        {renderInput('mobile', 'Mobile')}
-        {renderInput('campus_Highlight', 'Campus Highlight')}
-        {renderInput('path', 'How to Reach?')}
-        {renderInput('rank', 'Rank')}
+      <h2 className="text-2xl font-semibold mb-6">
+        {editMode ? "Edit College" : "Add New College"}
+      </h2>
+      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
+        {renderInput("name", "Name")}
+        {renderInput("university", "University")}
+        {renderInput("mobile", "Mobile")}
+        {renderInput("campus_Highlight", "Campus Highlight")}
+        {renderInput("path", "How to Reach?")}
+        {renderInput("rank", "Rank")}
 
         <div className="relative">
-          <label className="block text-gray-700 capitalize mb-2">Select the Category</label>
+          <label className="block text-gray-700 capitalize mb-2">
+            Select the Category
+          </label>
           <select
             name="category"
             value={formData.category}
@@ -329,7 +418,9 @@ const AddCollege = ({ handleClose, editMode }) => {
           >
             <option value="">Select Category</option>
             {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>{cat.title}</option>
+              <option key={cat._id} value={cat._id}>
+                {cat.title}
+              </option>
             ))}
           </select>
         </div>
@@ -338,7 +429,10 @@ const AddCollege = ({ handleClose, editMode }) => {
           <h3 className="text-lg font-semibold mb-2">Select Tags</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {tags.map((tag) => (
-              <label key={tag._id} className="flex items-center space-x-2 cursor-pointer">
+              <label
+                key={tag._id}
+                className="flex items-center space-x-2 cursor-pointer"
+              >
                 <input
                   type="checkbox"
                   checked={formData.selectedTags.includes(tag._id)}
@@ -351,12 +445,24 @@ const AddCollege = ({ handleClose, editMode }) => {
           </div>
         </div>
 
-        {renderSearchInput('address', 'Address', addressSuggestions, setAddressSuggestions)}
-        {renderSearchInput('mainCity', 'Center of City (Address)', mainCitySuggestions, setMainCitySuggestions)}
+        {renderSearchInput(
+          "address",
+          "Address",
+          addressSuggestions,
+          setAddressSuggestions
+        )}
+        {renderSearchInput(
+          "mainCity",
+          "Center of City (Address)",
+          mainCitySuggestions,
+          setMainCitySuggestions
+        )}
 
         <div className="md:col-span-2">
           <div className="flex items-center gap-4">
-            <label className="block text-gray-700 capitalize mb-2">Description</label>
+            <label className="block text-gray-700 capitalize mb-2">
+              Description
+            </label>
             <button
               type="button"
               onClick={generateDescription}
@@ -375,8 +481,8 @@ const AddCollege = ({ handleClose, editMode }) => {
           />
         </div>
 
-        {renderArrayInput('images', 'Images', 'Enter image URL')}
-        {renderArrayInput('videos', 'Videos', 'Enter video URL')}
+        {renderArrayInput("images", "Images", "Enter image URL")}
+        {renderArrayInput("videos", "Videos", "Enter video URL")}
 
         <div className="md:col-span-2">
           <label className="block text-gray-700 capitalize mb-2">Courses</label>
@@ -389,10 +495,14 @@ const AddCollege = ({ handleClose, editMode }) => {
             required
           >
             {courses.map((course) => (
-              <option key={course._id} value={course._id}>{course.title}</option>
+              <option key={course._id} value={course._id}>
+                {course.title}
+              </option>
             ))}
           </select>
-          <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple courses</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Hold Ctrl/Cmd to select multiple courses
+          </p>
         </div>
 
         {formData.courseIds.length > 0 && (
@@ -401,14 +511,16 @@ const AddCollege = ({ handleClose, editMode }) => {
             {formData.courseIds.map((courseId, index) => (
               <div key={courseId} className="mb-4 border p-4 rounded-md">
                 <label className="block text-gray-700 mb-2 font-medium">
-                  {courses.find((c) => c._id === courseId)?.title || 'Course'}
+                  {courses.find((c) => c._id === courseId)?.title || "Course"}
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-600 text-sm mb-1">Support Staff</label>
+                    <label className="block text-gray-600 text-sm mb-1">
+                      Support Staff
+                    </label>
                     <select
                       name={`supportId-${index}`}
-                      value={formData.supportIds[index] || ''}
+                      value={formData.supportIds[index] || ""}
                       onChange={handleChange}
                       className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
@@ -422,17 +534,90 @@ const AddCollege = ({ handleClose, editMode }) => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-gray-600 text-sm mb-1">Fee</label>
-                    <input
+                    <label className="block text-gray-600 text-sm mb-1">
+                      Fee
+                    </label>
+                    <TextField
                       type="number"
-                      name={`fee-${index}`}
-                      value={formData.fees[index] || ''}
+                      name={`fee-amount-${index}`}
+                      value={formData.fees[index]?.amount || ""}
                       onChange={handleChange}
                       placeholder="Enter course fee"
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      inputProps={{ min: 0 }}
                       required
-                      min="0"
                     />
+                    <RadioGroup
+                      row
+                      name={`fee-unit-${index}`}
+                      value={formData.fees[index]?.unit || "Year"}
+                      onChange={handleChange}
+                      className="mt-2"
+                    >
+                      <FormControlLabel
+                        value="Year"
+                        control={<Radio />}
+                        label="Year"
+                      />
+                      <FormControlLabel
+                        value="Semester"
+                        control={<Radio />}
+                        label="Semester"
+                      />
+                      <FormControlLabel
+                        value="Course"
+                        control={<Radio />}
+                        label="Course"
+                      />
+                    </RadioGroup>
+                    {(formData.fees[index]?.unit === "Year" ||
+                      formData.fees[index]?.unit === "Semester") && (
+                      <TextField
+                        type="number"
+                        name={`fee-duration-${index}`}
+                        value={formData.fees[index]?.duration || ""}
+                        onChange={handleChange}
+                        label={
+                          formData.fees[index]?.unit === "Year"
+                            ? "Duration (Years)"
+                            : "Number of Semesters"
+                        }
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        inputProps={{ min: 1 }}
+                        required
+                        className="mt-2"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 text-sm mb-1">
+                      Select Includes
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    {feeTags.map((item) => (
+                      <div key={item._id} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={formData.feeTags.includes(item.title)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setFormData((prev) => ({
+                              ...prev,
+                              feeTags: checked
+                                ? [...prev.feeTags, item.title]
+                                : prev.feeTags.filter(
+                                    (tag) => tag !== item.title
+                                  ),
+                            }));
+                          }}
+                        />
+                        <p>{item.title}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -449,13 +634,13 @@ const AddCollege = ({ handleClose, editMode }) => {
             Close
           </button>
           <button
-            type="submit"
+            onClick={() => console.log(formData)}
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
           >
-            {editMode ? 'Update College' : 'Submit College'}
+            {editMode ? "Update College" : "Submit College"}
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

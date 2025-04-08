@@ -18,6 +18,8 @@ import Swal from "sweetalert2";
 import Category from "./Category";
 import Tag from "./Tag";
 import AppDetails from "./AppDetails";
+import { Dialog } from "@mui/material";
+import FeesTags from "./FeesTags";
 
 const CollegeList = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,6 +32,7 @@ const CollegeList = () => {
   const [courses, setCourses] = useState([]);
   const [editMode, setEditMode] = useState(null); // Holds the college being edited
   const [showCat, setShowCat] = useState(false);
+  const [showFessTag, setShowFeesTag] = useState(false);
   const [showAppDetails, setShowAppDetails] = useState(false)
   const navigate = useNavigate();
 
@@ -56,6 +59,7 @@ const CollegeList = () => {
     setShowCat(false);
     setShowTag(false);
     setShowAppDetails(false)
+    setShowFeesTag(false)
     setEditMode(null); // Reset edit mode when closing
   };
 
@@ -186,6 +190,12 @@ const CollegeList = () => {
                 <FaPlus className="mr-2" /> Tags
               </button>
               <button
+                onClick={() => setShowFeesTag(true)}
+                className="inline-flex w-48 items-center px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+              >
+                <FaPlus className="mr-2" /> Fees Tags
+              </button>
+              <button
                 onClick={() => {
                
                   setShowAppDetails(true);
@@ -274,6 +284,9 @@ const CollegeList = () => {
           <SupportForm handleClose={handleClose} />
         </div>
       )}
+      <Dialog open={showFessTag} onClose={handleClose}>
+        <FeesTags handleClose={handleClose} />
+      </Dialog>
     </div>
   );
 };

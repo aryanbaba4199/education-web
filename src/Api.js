@@ -41,6 +41,13 @@ export const collegeApi  = {
     createAppDetails : `${apiUrl}/college/cappdetails`,
     updateAppDetails : `${apiUrl}/college/uappdetails`,
 
+    correctPath : `${apiUrl}/college/correctpath`,
+
+    createFeesTag : `${apiUrl}/college/cftag`,
+    getFeesTag : `${apiUrl}/college/gftag`,
+    updateFeesTag : `${apiUrl}/college/uftag`,
+    deleteFeesTag : `${apiUrl}/college/rftag`,
+
 }
 
 export const distanceApi = {
