@@ -634,7 +634,7 @@ const AddCollege = ({ handleClose, editMode }) => {
             Close
           </button>
           <button
-            onClick={() => console.log(formData)}
+            onClick={handleSubmit}
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
           >
             {editMode ? "Update College" : "Submit College"}
