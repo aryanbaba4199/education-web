@@ -12,6 +12,7 @@ import Users from "./components/admin/users/Users";
 import Slider from "./components/admin/slider/Slider";
 import ErrorBoundaryWrapper from "./components/user/ErrorBoundaryWrapper";
 import PrivacyPolicy from "./components/user/Privacy";
+import AdminCollegeDetails from "./components/admin/College/AdminCollegeDetails";
 
 
 const ProtectedRoute = ({children})=>{
@@ -50,6 +51,7 @@ const App = () => {
         <Route path="/privacy" element={<PrivacyPolicy />} />
 
         <Route path="/admin/college" element={<ProtectedRoute><CollegeList /></ProtectedRoute>} />
+        <Route path="/admin/collegeDetails/:collegeId" element={<ProtectedRoute><AdminCollegeDetails/></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
         <Route path="/admin/slider" element={<ProtectedRoute><Slider /></ProtectedRoute>} />

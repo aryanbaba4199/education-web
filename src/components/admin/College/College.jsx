@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  FaPhone,
-  FaWhatsapp,
   FaSearch,
   FaPlus,
   FaEdit,
@@ -11,7 +9,7 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import SupportForm from "./SupportForm";
-import AddCollege from "./CollegeForm"; // Ensure this matches your file structure
+import AddCollege from "./CollegeForm";
 import AddCourse from "./CourseForm";
 import { collegeApi, getterFunction, removerFunction } from "../../../Api";
 import Swal from "sweetalert2";
@@ -33,29 +31,81 @@ const CollegeList = () => {
   const [showCat, setShowCat] = useState(false);
   const [showFessTag, setShowFeesTag] = useState(false);
   const [tags, setTags] = useState([]);
+  const [categories, setCategories] = useState([]); // Added categories state
   const [support, setSupport] = useState([]);
   const [showAppDetails, setShowAppDetails] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Added loading state
+  const [error, setError] = useState(null); // Added error state
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
-        await Promise.all([getColleges(), getCourses(), getTags(), getSupport()]);
+        await Promise.all([
+          getColleges(),
+          getCourses(),
+          getTags(),
+          getCategories(), // Fetch categories
+          getSupport(),
+        ]);
       } catch (error) {
+        setError("Failed to load data. Please try again later.");
         console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
   }, []);
 
+  const getColleges = async () => {
+    try {
+      const res = await getterFunction(collegeApi.getColleges);
+      if (res.success) {
+        setColleges(res.data || []);
+      } else {
+        throw new Error("Failed to fetch colleges");
+      }
+    } catch (error) {
+      console.error("Error fetching colleges:", error);
+      setError("Error fetching colleges.");
+    }
+  };
+
+  const getCourses = async () => {
+    try {
+      const res = await getterFunction(collegeApi.getCourses);
+      if (res.success) {
+        setCourses(res.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setError("Error fetching courses.");
+    }
+  };
+
   const getTags = async () => {
     try {
       const res = await getterFunction(collegeApi.getTag);
       if (res.success) {
-        setTags(res.data);
+        setTags(res.data || []);
       }
-    } catch (e) {
-      console.error("Error fetching tags:", e);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      setError("Error fetching tags.");
+    }
+  };
+
+  const getCategories = async () => {
+    try {
+      const res = await getterFunction(collegeApi.getCategory);
+      if (res.success) {
+        setCategories(res.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setError("Error fetching categories.");
     }
   };
 
@@ -63,23 +113,35 @@ const CollegeList = () => {
     try {
       const res = await getterFunction(collegeApi.getSupport);
       if (res.success) {
-        setSupport(res.data);
+        setSupport(res.data || []);
       }
-    } catch (e) {
-      console.error("Error fetching support:", e);
+    } catch (error) {
+      console.error("Error fetching support:", error);
+      setError("Error fetching support.");
     }
   };
 
-  const filteredColleges = colleges.filter(
-    (college) =>
-      college.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      college.mainCity.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredColleges = colleges.filter((college) => {
+    if (!college) return false; // Skip invalid college entries
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true; // Show all if query is empty
 
-  if (!navigate) {
-    console.error("Navigation not available");
-    return <div>Error: Navigation not available</div>;
-  }
+    const collegeName = college.name?.toLowerCase() || "";
+    const collegeAddress = college.address?.toLowerCase() || ""; // Using address instead of location
+    const collegeCategory =
+      categories.find((cat) => cat._id === college.category)?.title?.toLowerCase() || "";
+    const collegeTags = (college.selectedTags || [])
+      .map((tagId) => tags.find((tag) => tag._id === tagId)?.title?.toLowerCase())
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      collegeName.includes(query) ||
+      collegeAddress.includes(query) ||
+      collegeCategory.includes(query) ||
+      collegeTags.includes(query)
+    );
+  });
 
   const handleClose = () => {
     setShowSuport(false);
@@ -92,97 +154,29 @@ const CollegeList = () => {
     setEditMode(null);
   };
 
-  const getColleges = async () => {
-    try {
-      const res = await getterFunction(collegeApi.getColleges);
-      if (res.success) {
-        setColleges(res.data);
-      }
-    } catch (error) {
-      console.error("Error fetching colleges:", error);
-    }
+  const handleViewMore = (collegeId) => {
+    navigate(`/admin/collegeDetails/${collegeId}`);
   };
 
-  const getCourses = async () => {
-    try {
-      const res = await getterFunction(collegeApi.getCourses);
-      if (res.success) {
-        setCourses(res.data);
-      }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
+  if (!navigate) {
+    console.error("Navigation not available");
+    return <div>Error: Navigation not available</div>;
+  }
 
-  const handleEdit = (college) => {
-    setEditMode(college);
-    setShowCollege(true);
-  };
+  if (error) {
+    return <div className="text-center text-red-600 p-4">{error}</div>;
+  }
 
-  const handleDelete = async (collegeId) => {
-    try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You will not be able to recover this college!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-      });
-
-      if (result.isConfirmed) {
-        const { value: code } = await Swal.fire({
-          title: "Enter Security Code",
-          input: "text",
-          inputLabel: "Only authorized users can delete colleges.",
-          inputPlaceholder: "Enter code",
-          inputAttributes: { autocapitalize: "off", autocorrect: "off" },
-          showCancelButton: true,
-          confirmButtonText: "Verify",
-          cancelButtonText: "Cancel",
-          preConfirm: (value) => {
-            if (value !== "727798") {
-              Swal.showValidationMessage("Incorrect code");
-            }
-            return value;
-          },
-        });
-
-        if (code === "727798") {
-          const res = await removerFunction(`${collegeApi.removeCollege}/${collegeId}`); // Fixed typo
-          if (res.success) {
-            Swal.fire("Deleted!", "Your college has been deleted.", "success");
-            getColleges();
-          } else {
-            Swal.fire("Error!", "Failed to delete the college.", "error");
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Error deleting college:", e);
-      Swal.fire("Oops!", "Something went wrong.", "error");
-    }
-  };
-
-  const renderFeeDetails = (fees, courseIndex) => {
-    if (!fees || fees.length === 0) return null;
-
-    const feeDetails = fees.map((fee, idx) => (
-      <li key={idx}>
-        {fee.period ? `${fee.period} Fee: ₹${fee.amount}` : `Course Fee: ₹${fee.amount}`}
-      </li>
-    ));
-
-    return <ul className="list-disc list-inside text-gray-600 text-sm">{feeDetails}</ul>;
-  };
+  if (isLoading) {
+    return <div className="text-center text-gray-600 p-4">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col w-full">
       {showCourse ? (
         <AddCourse handleClose={handleClose} />
       ) : showCollege ? (
-        <AddCollege handleClose={handleClose} editMode={editMode} />
+        <AddCollege handleClose={handleClose} />
       ) : showCat ? (
         <Category handleClose={handleClose} />
       ) : showTag ? (
@@ -200,7 +194,7 @@ const CollegeList = () => {
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search colleges by name or location"
+              placeholder="Search colleges by name, address, category, or tags"
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -261,113 +255,61 @@ const CollegeList = () => {
 
           {/* College Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredColleges.map((college) => (
-              <div
-                key={college._id}
-                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow relative"
-              >
-                {college.images?.length > 0 && (
-                  <img
-                    src={college.images[0]}
-                    alt={college.name}
-                    className="w-full h-40 object-cover rounded-t-lg mb-4"
-                  />
-                )}
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">{college.name}</h3>
-                <p className="text-gray-600 mb-1">
-                  <span className="font-medium">University:</span> {college.university}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  <span className="font-medium">Address:</span> {college.address}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  <span className="font-medium">City:</span> {college.mainCity}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  <span className="font-medium">Campus Highlight:</span> {college.campus_Highlight}
-                </p>
-                <p className="text-gray-600 mb-1 flex items-center">
-                  <FaPhone className="mr-2 text-blue-500" />
-                  {college.mobile}
-                </p>
-                <p className="text-gray-600 mb-1">
-                  <span className="font-medium">Rank:</span> {college.rank || "N/A"}
-                </p>
-                {college.description && (
+            {filteredColleges.length > 0 ? (
+              filteredColleges.map((college) => (
+                <div
+                  key={college._id}
+                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow relative"
+                >
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{college.name}</h3>
+                  {college.images?.length > 0 ? (
+                    <img
+                      src={college.images[0]}
+                      alt={college.name}
+                      className="w-24 h-24 rounded-full absolute right-2 top-2 object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full absolute right-2 top-2 bg-gray-200 flex items-center justify-center text-gray-500">
+                      No Image
+                    </div>
+                  )}
                   <p className="text-gray-600 mb-1">
-                    <span className="font-medium">Description:</span> {college.description.slice(0, 100)}...
+                    <span className="font-medium">University:</span>{" "}
+                    {college.university || "N/A"}
                   </p>
-                )}
-                {college.path && (
                   <p className="text-gray-600 mb-1">
-                    <span className="font-medium">How to Reach:</span> {college.path}
+                    <span className="font-medium">Address:</span> {college.address || "N/A"}
                   </p>
-                )}
-                {college.selectedTags?.length > 0 && (
+                  <p className="text-gray-600 mb-1">
+                    <span className="font-medium">Distance from Main City:</span>{" "}
+                    {college.mainCityDistance
+                      ? `${(college.mainCityDistance / 1000).toFixed(2)} km`
+                      : "N/A"}
+                  </p>
+                  <p className="text-gray-600 mb-1">
+                    <span className="font-medium">Category:</span>{" "}
+                    {categories.find((cat) => cat._id === college.category)?.title || "N/A"}
+                  </p>
                   <p className="text-gray-600 mb-1">
                     <span className="font-medium">Tags:</span>{" "}
-                    {college.selectedTags.map((tagId) => {
-                      const tag = tags.find((t) => t._id === tagId);
-                      return tag ? tag.title : tagId;
-                    }).join(", ")}
+                    {(college.selectedTags || [])
+                      .map((tagId) => tags.find((tag) => tag._id === tagId)?.title)
+                      .filter(Boolean)
+                      .join(", ") || "None"}
                   </p>
-                )}
-                {college.feeTags?.length > 0 && (
-                  <p className="text-gray-600 mb-1">
-                    <span className="font-medium">Fee Includes:</span> {college.feeTags.join(", ")}
-                  </p>
-                )}
-                {college.courseIds?.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-gray-600 font-medium">Courses:</p>
-                    <ul className="list-disc list-inside text-gray-600 text-sm">
-                      {college.courseIds.map((courseId, index) => (
-                        <li key={courseId}>
-                          {courses?.find((c) => c._id === courseId)?.title || courseId}
-                          {college.fees && college.fees.length > 0 && (
-                            <div>
-                              {renderFeeDetails(
-                                college.fees.filter(
-                                  (_, i) =>
-                                    i >= (index * college.fees.length) / college.courseIds.length &&
-                                    i < ((index + 1) * college.fees.length) / college.courseIds.length
-                                ),
-                                index
-                              )}
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="mt-4 flex justify-end items-center">
+                    <button
+                      onClick={() => handleViewMore(college._id)}
+                      className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-1 rounded-md font-medium"
+                    >
+                      View More
+                    </button>
                   </div>
-                )}
-                {college.supportIds?.length > 0 && (
-                  <p className="text-gray-600 mb-1">
-                    <span className="font-medium">Support Staff:</span>{" "}
-                    {college.supportIds.map((supportId) => {
-                      const staff = support.find((s) => s._id === supportId); // Fixed condition
-                      return staff ? `${staff.name} (${staff.mobile})` : supportId;
-                    }).join(", ")}
-                  </p>
-                )}
-                <div className="absolute top-2 right-2 flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(college)}
-                    className="p-2 text-blue-600 hover:text-blue-800"
-                    title="Edit College"
-                  >
-                    <FaEdit size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(college._id)}
-                    className="p-2 text-red-600 hover:text-red-800"
-                    title="Delete College"
-                  >
-                    <FaTrash size={20} />
-                  </button>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center text-gray-600 col-span-full">No colleges found</p>
+            )}
           </div>
         </div>
       )}

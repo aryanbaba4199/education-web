@@ -1,8 +1,8 @@
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-// const apiUrl = 'http://192.168.31.105:5000'
-const apiUrl = 'https://education-1064837086369.asia-south1.run.app'
+const apiUrl = 'http://192.168.31.105:5000'
+// const apiUrl = 'https://education-1064837086369.asia-south1.run.app'
 
 export const userApi = {
     createUser : `${apiUrl}/users/createUser`,
@@ -27,7 +27,7 @@ export const collegeApi  = {
     dashboard : `${apiUrl}/college/dashboard`,
     suggestLocation : `${apiUrl}/college/suggestLocation`,
     generateDescription : `${apiUrl}/college/helper/generateDescription`,
-    
+    getCollegeDetails : `${apiUrl}/college/gcollegebyid`,
     createCategory : `${apiUrl}/college/ccategory`,
     getCategory : `${apiUrl}/college/gcategory`,
     removeCategory : `${apiUrl}/college/dcategory`,

@@ -34,12 +34,11 @@ const AddCollege = ({ handleClose, editMode }) => {
     category: "",
     mobile: "",
     path: "",
-    feeTags: [],
     rank: 0,
     selectedTags: [],
     courseIds: [],
     supportIds: [],
-    fees: [], // Array of objects: [{ unit, duration, amounts: [] }]
+    fees: [], // { unit, duration, amounts: [], total, feeTags: [] }
     images: [],
     videos: [],
   });
@@ -48,6 +47,7 @@ const AddCollege = ({ handleClose, editMode }) => {
   const addressInputRef = useRef(null);
   const mainCityInputRef = useRef(null);
   const descriptionRef = useRef(null);
+  const pathRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,16 +70,49 @@ const AddCollege = ({ handleClose, editMode }) => {
       }
     };
     fetchData();
+
     if (editMode) {
+      const mappedFees = editMode.courseIds.map((courseId, index) => {
+        const courseFees = editMode.fees
+          ? editMode.fees.slice(
+              index * Math.ceil(editMode.fees.length / editMode.courseIds.length),
+              (index + 1) * Math.ceil(editMode.fees.length / editMode.courseIds.length)
+            )
+          : [];
+        const unit = courseFees.length > 0 && courseFees[0].period
+          ? (courseFees[0].period.includes("Year") ? "Year" : "Semester")
+          : "Course";
+        const duration = unit !== "Course" ? courseFees.length : "";
+        const amounts = courseFees.length > 0
+          ? unit === "Course"
+            ? [courseFees[0].amount]
+            : courseFees.map(f => f.amount)
+          : [""];
+        const total = amounts.reduce((sum, amt) => sum + (parseFloat(amt) || 0), 0).toString();
+
+        return {
+          unit,
+          duration,
+          amounts,
+          total,
+          feeTags: editMode.feeTags || [],
+        };
+      });
+
       setFormData({
         ...editMode,
         selectedTags: editMode.selectedTags || [],
         courseIds: editMode.courseIds || [],
         supportIds: editMode.supportIds || [],
-        fees: editMode.fees || [],
+        fees: mappedFees.length > 0 ? mappedFees : editMode.courseIds.map(() => ({
+          unit: "Year",
+          duration: "",
+          amounts: [],
+          total: "",
+          feeTags: editMode.feeTags || [],
+        })),
         images: editMode.images || [],
         videos: editMode.videos || [],
-        feeTags: editMode.feeTags || [],
       });
     }
     adjustTextareaHeight();
@@ -87,13 +120,22 @@ const AddCollege = ({ handleClose, editMode }) => {
 
   useEffect(() => {
     adjustTextareaHeight();
-  }, [formData.description]);
+    adjustPathHeight();
+  }, [formData.description, formData.path]);
 
   const adjustTextareaHeight = () => {
     const textarea = descriptionRef.current;
     if (textarea) {
       textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
+  const adjustPathHeight = () => {
+    const input = pathRef.current;
+    if (input) {
+      input.style.height = "auto";
+      input.style.height = `${input.scrollHeight}px`;
     }
   };
 
@@ -136,7 +178,6 @@ const AddCollege = ({ handleClose, editMode }) => {
 
   const fetchSuggestions = async (input, setSuggestions) => {
     if (!input) return setSuggestions([]);
-
     try {
       const res = await getterFunction(
         `https://education-1064837086369.asia-south1.run.app/college/suggestLocation?input=${encodeURIComponent(
@@ -190,6 +231,15 @@ const AddCollege = ({ handleClose, editMode }) => {
       const updatedFees = [...prev.fees];
       if (key === "amounts" && feeIndex !== null) {
         updatedFees[courseIndex].amounts[feeIndex] = value;
+        const total = updatedFees[courseIndex].amounts.reduce(
+          (sum, amt) => sum + (parseFloat(amt) || 0),
+          0
+        );
+        updatedFees[courseIndex].total = total.toString();
+      } else if (key === "feeTags") {
+        updatedFees[courseIndex].feeTags = value;
+      } else if (key === "total") {
+        updatedFees[courseIndex].total = value;
       } else {
         updatedFees[courseIndex] = {
           ...updatedFees[courseIndex],
@@ -198,10 +248,12 @@ const AddCollege = ({ handleClose, editMode }) => {
         if (key === "duration" && value) {
           const num = parseInt(value) || 0;
           updatedFees[courseIndex].amounts = Array(num).fill("");
+          updatedFees[courseIndex].total = "";
         }
         if (key === "unit" && value === "Course") {
           updatedFees[courseIndex].duration = "";
           updatedFees[courseIndex].amounts = [""];
+          updatedFees[courseIndex].total = "";
         }
       }
       return { ...prev, fees: updatedFees };
@@ -223,6 +275,8 @@ const AddCollege = ({ handleClose, editMode }) => {
           unit: "Year",
           duration: "",
           amounts: [],
+          total: "",
+          feeTags: [],
         }),
       }));
     } else if (name.startsWith("supportId-")) {
@@ -236,15 +290,24 @@ const AddCollege = ({ handleClose, editMode }) => {
       handleFeeChange(index, "duration", value);
     } else if (name.startsWith("fee-amount-")) {
       const [_, __, courseIndex, feeIndex] = name.split("-");
-      handleFeeChange(
-        parseInt(courseIndex),
-        "amounts",
-        value,
-        parseInt(feeIndex)
-      );
+      handleFeeChange(parseInt(courseIndex), "amounts", value, parseInt(feeIndex));
+    } else if (name.startsWith("fee-total-")) {
+      const index = parseInt(name.split("-")[2]);
+      handleFeeChange(index, "total", value);
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleFeeTagChange = (courseIndex, tagTitle, checked) => {
+    setFormData((prev) => {
+      const updatedFees = [...prev.fees];
+      const currentFeeTags = updatedFees[courseIndex].feeTags || [];
+      updatedFees[courseIndex].feeTags = checked
+        ? [...currentFeeTags, tagTitle]
+        : currentFeeTags.filter((tag) => tag !== tagTitle);
+      return { ...prev, fees: updatedFees };
+    });
   };
 
   const selectSuggestion = (suggestion, field, setSuggestions) => {
@@ -254,10 +317,43 @@ const AddCollege = ({ handleClose, editMode }) => {
 
   const handleUpdate = async (formData) => {
     setLoader("Updating...");
+    console.log("Original fees in handleUpdate:", formData.fees);
     try {
+      const feesArray = Array.isArray(formData.fees) ? formData.fees : [];
+      let transformedFees;
+      let allFeeTags;
+
+      // Check if fees are already in backend format ({ period, amount })
+      if (feesArray.length > 0 && "period" in feesArray[0]) {
+        transformedFees = feesArray; // Already transformed, use as is
+        allFeeTags = formData.feeTags || []; // Use existing feeTags from payload
+      } else {
+        // Transform UI format to backend format
+        allFeeTags = feesArray.map(fee => fee.feeTags || []).flat();
+        transformedFees = feesArray
+          .map((fee) => {
+            if (fee.unit === "Course") {
+              return { amount: fee.amounts[0] || "0" };
+            }
+            return fee.amounts.map((amount, idx) => ({
+              period: `${fee.unit} ${idx + 1}`,
+              amount: amount || "0",
+            }));
+          })
+          .flat();
+      }
+
+      const payload = {
+        ...formData,
+        fees: transformedFees,
+        feeTags: allFeeTags,
+      };
+
+      console.log("Update Payload:", payload);
+
       const res = await updaterFunction(
         `${collegeApi.updateCollege}/${formData._id}`,
-        formData
+        payload
       );
       if (res?.success) {
         Swal.fire({
@@ -271,6 +367,7 @@ const AddCollege = ({ handleClose, editMode }) => {
       console.error("Error updating college:", e);
       Swal.fire({
         title: "Error updating college!",
+        text: e.message,
         icon: "error",
         confirmButtonText: "Okay",
       });
@@ -280,21 +377,30 @@ const AddCollege = ({ handleClose, editMode }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoader("submitting...");
+    setLoader("Submitting...");
     try {
-      const transformedFees = formData.fees
+      // Transform fees only if in UI format
+      const feesArray = Array.isArray(formData.fees) ? formData.fees : [];
+      const allFeeTags = feesArray.map(fee => fee.feeTags || []).flat();
+      const transformedFees = feesArray
         .map((fee) => {
           if (fee.unit === "Course") {
-            return { amount: fee.amounts[0] };
+            return { amount: fee.amounts[0] || "0" };
           }
           return fee.amounts.map((amount, idx) => ({
             period: `${fee.unit} ${idx + 1}`,
-            amount,
+            amount: amount || "0",
           }));
         })
         .flat();
 
-      const payload = { ...formData, fees: transformedFees };
+      const payload = {
+        ...formData,
+        fees: transformedFees,
+        feeTags: allFeeTags,
+      };
+
+      console.log("Submit Payload:", payload);
 
       if (editMode) {
         await handleUpdate(payload);
@@ -317,7 +423,6 @@ const AddCollege = ({ handleClose, editMode }) => {
             mobile: "",
             path: "",
             rank: 0,
-            feeTags: [],
             selectedTags: [],
             courseIds: [],
             supportIds: [],
@@ -333,9 +438,7 @@ const AddCollege = ({ handleClose, editMode }) => {
       console.error("Error submitting college:", e);
       Swal.fire({
         title: "Error",
-        text: `Failed to ${
-          editMode ? "update" : "add"
-        } college. Please try again.`,
+        text: `Failed to ${editMode ? "update" : "add"} college: ${e.message}`,
         icon: "error",
         confirmButtonText: "Okay",
       });
@@ -355,14 +458,31 @@ const AddCollege = ({ handleClose, editMode }) => {
           </button>
         )}
       </div>
-      <input
-        type="text"
-        name={field}
-        value={formData[field]}
-        onChange={handleChange}
-        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        required={required}
-      />
+      {field === "path" ? (
+        <textarea
+          name={field}
+          value={formData[field]}
+          onChange={handleChange}
+          ref={pathRef}
+          maxLength={150}
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[50px] resize-none overflow-hidden"
+          required={required}
+        />
+      ) : (
+        <input
+          type="text"
+          name={field}
+          value={formData[field]}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required={required}
+        />
+      )}
+      {field === "path" && (
+        <p className="text-sm text-gray-500 mt-1">
+          {formData.path.length}/150 characters
+        </p>
+      )}
     </div>
   );
 
@@ -391,9 +511,7 @@ const AddCollege = ({ handleClose, editMode }) => {
           {suggestions.map((suggestion, index) => (
             <li
               key={index}
-              onClick={() =>
-                selectSuggestion(suggestion, field, setSuggestions)
-              }
+              onClick={() => selectSuggestion(suggestion, field, setSuggestions)}
               className="p-2 hover:bg-gray-100 cursor-pointer"
             >
               {suggestion}
@@ -651,22 +769,47 @@ const AddCollege = ({ handleClose, editMode }) => {
                               />
                             )
                           )}
+                          <TextField
+                            type="number"
+                            name={`fee-total-${index}`}
+                            value={formData.fees[index]?.total || ""}
+                            onChange={handleChange}
+                            label="Total Fee"
+                            variant="outlined"
+                            size="small"
+                            fullWidth
+                            inputProps={{ min: 0 }}
+                            className="mt-2"
+                          />
                         </div>
                       )}
                     {formData.fees[index]?.unit === "Course" && (
-                      <TextField
-                        type="number"
-                        name={`fee-amount-${index}-0`}
-                        value={formData.fees[index]?.amounts[0] || ""}
-                        onChange={handleChange}
-                        label="Course Fee"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        inputProps={{ min: 0 }}
-                        required
-                        className="mt-2"
-                      />
+                      <div className="mt-2 space-y-2">
+                        <TextField
+                          type="number"
+                          name={`fee-amount-${index}-0`}
+                          value={formData.fees[index]?.amounts[0] || ""}
+                          onChange={handleChange}
+                          label="Course Fee"
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          inputProps={{ min: 0 }}
+                          required
+                        />
+                        <TextField
+                          type="number"
+                          name={`fee-total-${index}`}
+                          value={formData.fees[index]?.total || ""}
+                          onChange={handleChange}
+                          label="Total Fee"
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          inputProps={{ min: 0 }}
+                          className="mt-2"
+                        />
+                      </div>
                     )}
                   </div>
                   <div>
@@ -678,18 +821,12 @@ const AddCollege = ({ handleClose, editMode }) => {
                     {feeTags.map((item) => (
                       <div key={item._id} className="flex items-center gap-2">
                         <Checkbox
-                          checked={formData.feeTags.includes(item.title)}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setFormData((prev) => ({
-                              ...prev,
-                              feeTags: checked
-                                ? [...prev.feeTags, item.title]
-                                : prev.feeTags.filter(
-                                    (tag) => tag !== item.title
-                                  ),
-                            }));
-                          }}
+                          checked={
+                            (formData.fees[index]?.feeTags || []).includes(item.title)
+                          }
+                          onChange={(e) =>
+                            handleFeeTagChange(index, item.title, e.target.checked)
+                          }
                         />
                         <p>{item.title}</p>
                       </div>
@@ -718,7 +855,7 @@ const AddCollege = ({ handleClose, editMode }) => {
         </div>
       </div>
       <Dialog fullWidth open={loader}>
-        <div className="bg-transparent min-h-screen w-full flex flex-col justify-center items-center bg-s">
+        <div className="bg-transparent min-h-screen w-full flex flex-col justify-center items-center">
           <CircularProgress color="#15892e" />
           <h2>{loader ?? "Loading..."}</h2>
         </div>
