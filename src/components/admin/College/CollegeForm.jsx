@@ -38,7 +38,7 @@ const AddCollege = ({ handleClose, editMode }) => {
     selectedTags: [],
     courseIds: [],
     supportIds: [],
-    fees: [], // { unit, duration, amounts: [], total, feeTags: [] }
+    fees: [], // { courseId, unit, duration, amounts: [], total, feeTags: [] }
     images: [],
     videos: [],
   });
@@ -91,6 +91,7 @@ const AddCollege = ({ handleClose, editMode }) => {
         const total = amounts.reduce((sum, amt) => sum + (parseFloat(amt) || 0), 0).toString();
 
         return {
+          courseId,
           unit,
           duration,
           amounts,
@@ -104,7 +105,8 @@ const AddCollege = ({ handleClose, editMode }) => {
         selectedTags: editMode.selectedTags || [],
         courseIds: editMode.courseIds || [],
         supportIds: editMode.supportIds || [],
-        fees: mappedFees.length > 0 ? mappedFees : editMode.courseIds.map(() => ({
+        fees: mappedFees.length > 0 ? mappedFees : editMode.courseIds.map((courseId) => ({
+          courseId,
           unit: "Year",
           duration: "",
           amounts: [],
@@ -267,18 +269,26 @@ const AddCollege = ({ handleClose, editMode }) => {
         e.target.selectedOptions,
         (option) => option.value
       );
-      setFormData((prev) => ({
-        ...prev,
-        courseIds: selectedOptions,
-        supportIds: Array(selectedOptions.length).fill(""),
-        fees: Array(selectedOptions.length).fill({
-          unit: "Year",
-          duration: "",
-          amounts: [],
-          total: "",
-          feeTags: [],
-        }),
-      }));
+      setFormData((prev) => {
+        const newCourseIds = selectedOptions;
+        const existingFeesMap = new Map(prev.fees.map(fee => [fee.courseId, fee]));
+        const newFees = newCourseIds.map((courseId) => 
+          existingFeesMap.get(courseId) || {
+            courseId,
+            unit: "Year",
+            duration: "",
+            amounts: [],
+            total: "",
+            feeTags: [],
+          }
+        );
+        return {
+          ...prev,
+          courseIds: newCourseIds,
+          supportIds: Array(newCourseIds.length).fill(""),
+          fees: newFees,
+        };
+      });
     } else if (name.startsWith("supportId-")) {
       const index = parseInt(name.split("-")[1]);
       handleArrayChange("supportIds", index, value);
@@ -323,21 +333,21 @@ const AddCollege = ({ handleClose, editMode }) => {
       let transformedFees;
       let allFeeTags;
 
-      // Check if fees are already in backend format ({ period, amount })
       if (feesArray.length > 0 && "period" in feesArray[0]) {
-        transformedFees = feesArray; // Already transformed, use as is
-        allFeeTags = formData.feeTags || []; // Use existing feeTags from payload
+        transformedFees = feesArray;
+        allFeeTags = formData.feeTags || [];
       } else {
-        // Transform UI format to backend format
         allFeeTags = feesArray.map(fee => fee.feeTags || []).flat();
         transformedFees = feesArray
           .map((fee) => {
             if (fee.unit === "Course") {
-              return { amount: fee.amounts[0] || "0" };
+              return { courseId: fee.courseId, period: "Course", amount: fee.amounts[0] || "0", total: fee.total || "0" };
             }
             return fee.amounts.map((amount, idx) => ({
+              courseId: fee.courseId,
               period: `${fee.unit} ${idx + 1}`,
               amount: amount || "0",
+              total: fee.total || "0",
             }));
           })
           .flat();
@@ -364,6 +374,7 @@ const AddCollege = ({ handleClose, editMode }) => {
         handleClose();
       }
     } catch (e) {
+      setLoader(null);
       console.error("Error updating college:", e);
       Swal.fire({
         title: "Error updating college!",
@@ -379,17 +390,18 @@ const AddCollege = ({ handleClose, editMode }) => {
     e.preventDefault();
     setLoader("Submitting...");
     try {
-      // Transform fees only if in UI format
       const feesArray = Array.isArray(formData.fees) ? formData.fees : [];
       const allFeeTags = feesArray.map(fee => fee.feeTags || []).flat();
       const transformedFees = feesArray
         .map((fee) => {
           if (fee.unit === "Course") {
-            return { amount: fee.amounts[0] || "0" };
+            return { courseId: fee.courseId, period: "Course", amount: fee.amounts[0] || "0", total: fee.total || "0" };
           }
           return fee.amounts.map((amount, idx) => ({
+            courseId: fee.courseId,
             period: `${fee.unit} ${idx + 1}`,
             amount: amount || "0",
+            total: fee.total || "0",
           }));
         })
         .flat();
@@ -434,7 +446,6 @@ const AddCollege = ({ handleClose, editMode }) => {
         }
       }
     } catch (e) {
-      setLoader(null);
       console.error("Error submitting college:", e);
       Swal.fire({
         title: "Error",
@@ -443,6 +454,7 @@ const AddCollege = ({ handleClose, editMode }) => {
         confirmButtonText: "Okay",
       });
     }
+    setLoader(null);
   };
 
   const renderInput = (field, label, required = true) => (

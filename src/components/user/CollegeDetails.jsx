@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   FaBook,
   FaPhone,
@@ -7,7 +7,10 @@ import {
   FaCity,
   FaRuler,
   FaHome,
-  FaFileAlt,
+  FaWhatsapp,
+  FaTrain,
+  FaShuttleVan,
+  FaPlane,
 } from "react-icons/fa";
 import {
   collegeApi,
@@ -15,13 +18,18 @@ import {
   getterFunction,
   posterFunction,
 } from "../../Api"; // Adjust path as needed
+import { getCurrentDistance } from "../../functions/Location";
 
 const CollegeDetails = () => {
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
-
+  const slides = JSON.parse(atob(searchParams.get("slide")));
+  const [fade, setFade] = useState(true);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const navigate = useNavigate();
   const [collegeData, setCollegeData] = useState(null);
   const [distance, setDistance] = useState(null);
+  const [unlockedCourses, setUnlockedCourses] = useState([]); // Track unlocked courses
 
   useEffect(() => {
     if (id) {
@@ -29,69 +37,49 @@ const CollegeDetails = () => {
     }
   }, [id]);
 
-  const requestLocationPermission = () => {
-    return new Promise((resolve) => {
-      if (navigator.geolocation) {
-        navigator.permissions.query({ name: "geolocation" }).then((result) => {
-          if (result.state === "granted") {
-            resolve(true);
-          } else if (result.state === "prompt") {
-            resolve(true); // Will prompt user when getCurrentPosition is called
-          } else {
-            alert(
-              "Location permission is required to calculate the distance. Please enable it in your browser settings."
-            );
-            resolve(false);
-          }
-        });
-      } else {
-        alert("Geolocation is not supported by this browser.");
-        resolve(false);
-      }
-    });
+  useEffect(() => {
+    if (slides.length > 0) {
+      const interval = setInterval(() => {
+        setFade(false);
+        setTimeout(() => {
+          setCurrentSlideIndex((prevIndex) => (prevIndex + 1) % slides.length);
+          setFade(true);
+        }, 500);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [slides]);
+
+  const handleCall = () => {
+    const appDetails = localStorage.getItem("appDetails");
+    window.location.href = `tel:${JSON.parse(appDetails)?.mobile || "+917005742790"}`;
+  };
+
+  const handleWhatsApp = () => {
+    const appDetails = localStorage.getItem("appDetails");
+    window.open(
+      `https://wa.me/${JSON.parse(appDetails)?.whatsapp || "+917005742790"}`,
+      "_blank"
+    );
   };
 
   const getHomeDistance = async (add1) => {
-    if (distance) return; // Skip if distance is already calculated
-
     try {
-      const hasPermission = await requestLocationPermission();
-      if (!hasPermission) return;
+      const message = await getCurrentDistance(add1);
+      const match = message.match(/Approx\s(\d+)\s?km/i);
+      const distanceValue = match ? parseInt(match[1]) : null;
 
-      console.log("Getting Location Permissions");
-
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const add2 = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          console.log("User location:", add2);
-
-          const formData = { add1, add2 };
-          const res = await posterFunction(distanceApi.getDistance, formData);
-
-          if (res.success) {
-            console.log("Distance:", res.data);
-            setDistance(res.data); // Store distance in meters, convert on display
-          } else {
-            alert("Failed to calculate distance. Please try again.");
-          }
+      setCollegeData((prev) => ({
+        ...prev,
+        college: {
+          ...(prev?.college || {}),
+          path: message,
         },
-        (error) => {
-          console.error("Error getting location:", error);
-          let message = "Unable to get your location.";
-          if (error.code === 1) message = "Location permission denied.";
-          else if (error.code === 2) message = "Location unavailable.";
-          else if (error.code === 3) message = "Location request timed out.";
-          alert(message);
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 30000,
-          maximumAge: 10000,
-        }
-      );
+      }));
+
+      if (distanceValue) {
+        setDistance(distanceValue);
+      }
     } catch (e) {
       console.error("Error getting home distance:", e);
       alert("An unexpected error occurred while fetching your location.");
@@ -101,9 +89,7 @@ const CollegeDetails = () => {
   const getCollegeDetails = async (id) => {
     try {
       const res = await getterFunction(`${collegeApi.getCollege}/${id}`);
-      console.log(res);
       if (res.success) {
-        console.log(res.data);
         setCollegeData(res.data);
       }
     } catch (e) {
@@ -111,8 +97,20 @@ const CollegeDetails = () => {
     }
   };
 
-  const handleInquiryCall = (number) => {
-    window.location.href = `tel:${number}`;
+  const handleUnlock = (courseId, supportIndex) => {
+    try {
+      const support = collegeData?.supoorts[supportIndex];
+      if (!support || !support.mobile) {
+        console.error("Support staff or mobile number not found");
+        return;
+      }
+
+      // Unlock the course and initiate phone call
+      // setUnlockedCourses((prev) => [...prev, courseId]);
+      window.location.href = `tel:${support.mobile}`;
+    } catch (e) {
+      console.error("Error in unlocking:", e);
+    }
   };
 
   if (!collegeData) {
@@ -132,11 +130,96 @@ const CollegeDetails = () => {
     mainCity,
     mainCityDistance,
     path,
+    fees,
+    images, 
+    courseIds,
   } = collegeData?.college;
+
+  const renderTitle = (heading) => {
+    if (heading === "**By Road") {
+      return (
+        <div className="flex justify-start gap-2 items-center bg-yellow-600 text-white w-fit px-8 rounded-sm">
+          <h3>By Road</h3>
+          <FaShuttleVan />
+        </div>
+      );
+    }
+    if (heading === "**Train" || heading === "**By Train:") {
+      return (
+        <div className="flex justify-start gap-2 items-center bg-green-600 text-white w-fit px-8 rounded-sm">
+          <h3>By Train</h3>
+          <FaTrain />
+        </div>
+      );
+    }
+    if (heading === "**By Flight" || heading === "**Flight") {
+      return (
+        <div className="flex justify-start gap-2 items-center bg-lime-600 text-white w-fit px-8 rounded-sm">
+          <h3>By Flight</h3>
+          <FaPlane />
+        </div>
+      );
+    }
+  };
+
+  // Group fees by courseId
+  const groupedFees = courseIds.map((courseId, index) => {
+    const courseFees = fees.filter((fee) => fee.courseId === courseId);
+    return { courseId, fees: courseFees, supportIndex: index };
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 py-6">
       {/* Header Card */}
+      <div className="h-[30%] bg-white shadow-md border-b border-gray-200 overflow-hidden">
+        {slides.length > 0 ? (
+          <img
+            src={slides[currentSlideIndex].image}
+            alt="Slide"
+            className={`w-full h-[160px] object-cover transition-opacity duration-500 ${
+              fade ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ) : (
+          <img
+            src="https://i.pinimg.com/736x/70/42/f8/7042f811eba5fdd333382d89b9521cca.jpg"
+            alt="Default"
+            className="w-full h-[160px] object-cover rounded"
+          />
+        )}
+        <div className="p-4 bg-white sticky top-0 z-50 shadow-md border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center">
+          <div className="flex gap-4">
+            <button
+              onClick={handleCall}
+              className="bg-teal-600 text-white py-1 px-4 rounded-md hover:bg-teal-700 flex items-center"
+            >
+              <FaPhone className="mr-2" />
+              Call
+            </button>
+            <button
+              onClick={handleWhatsApp}
+              className="bg-teal-600 text-white py-1 px-4 rounded-md hover:bg-teal-700 flex items-center"
+            >
+              <FaWhatsapp className="mr-2" />
+              WhatsApp
+            </button>
+            <div className="flex justify-center items-center rounded-md bg-red-600 text-white hover:bg-red-700">
+              <button
+                onClick={() => {
+                  localStorage.removeItem("edutoken");
+                  localStorage.removeItem("eduadmintoken");
+                  navigate("/");
+                }}
+                className="text-white px-4 py-1 rounded-md"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* College Info */}
       <div className="max-w-4xl mx-auto bg-white shadow-md rounded-lg mb-6 p-6">
         <h1 className="text-3xl font-bold text-teal-600">{name}</h1>
         <p className="text-lg text-gray-600 mb-4">{`( ${university} )`}</p>
@@ -144,7 +227,6 @@ const CollegeDetails = () => {
           {collegeData?.category}
         </p>
         <hr className="my-4 border-gray-200" />
-
         <div className="flex items-center gap-2">
           <FaPhone className="text-gray-600" />
           <div>
@@ -181,47 +263,43 @@ const CollegeDetails = () => {
               </p>
             </div>
           </div>
-          <div
-            onClick={() => getHomeDistance(address)}
-            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded"
-          >
+          <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
             <FaHome className="text-gray-600" />
             <div>
               <p className="font-semibold">Distance from Your Location</p>
               <p className="text-gray-600">
                 {distance
-                  ? `${(distance / 1000).toFixed(0)} km`
-                  : "Click to calculate distance"}
+                  ? `${distance.toFixed(0)} km`
+                  : "Click calculate distance & path to Get Distance"}
               </p>
             </div>
           </div>
-          <div
-            onClick={() => getHomeDistance(address)}
-            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded"
-          >
+          <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
             <div>
-              <p className="font-semibold">How To Reach ? </p>
+              <p className="font-semibold">How To Reach?</p>
+              <button
+                onClick={() => getHomeDistance(address)}
+                className="bg-teal-600 text-white px-4 py-1 rounded shadow-md shadow-black active:shadow-sm"
+              >
+                Calculate Distance & Path
+              </button>
               {path && (
-                <div className="text-gray-600 space-y-4">
+                <div className="text-gray-600 space-y-4 mt-4">
                   {path.split(/\d+\.\s*/).map((section, index) => {
                     if (!section.trim()) return null;
 
-                    const match = section.match(/^(.+?):\s*(.*)/s); // match "Heading: content"
-
+                    const match = section.match(/^(.+?):\s*(.*)/s);
                     if (match) {
                       const heading = match[1].trim();
                       const content = match[2].trim();
 
                       return (
                         <div key={index}>
-                          <h3 className="text-lg font-bold text-black">
-                            {heading}
-                          </h3>
+                          {renderTitle(heading)}
                           <p className="mt-1">{content}</p>
                         </div>
                       );
                     } else {
-                      // Fallback for general intro or unmatched parts
                       return (
                         <p key={index} className="mt-1">
                           {section.trim()}
@@ -243,49 +321,74 @@ const CollegeDetails = () => {
         </h2>
         <hr className="my-4 border-gray-200" />
         {collegeData?.courses.length > 0 ? (
-          collegeData.courses.map((course, index) => (
-            <div key={course._id} className="mb-6">
-              <div className="flex items-center gap-2">
-                <FaBook className="text-gray-600" />
-                <div>
-                  <p className="text-lg font-semibold text-gray-800">
-                    {course.title.toUpperCase()}
-                  </p>
-                  <p className="text-gray-600">{course?.description ?? ""}</p>
+          collegeData.courses.map((course, index) => {
+            const courseFees = groupedFees.find(
+              (group) => group.courseId === course._id
+            )?.fees || [];
+            const isUnlocked = unlockedCourses.includes(course._id);
+
+            return (
+              <div key={course._id} className="mb-6">
+                <div className="flex items-center gap-2">
+                  <FaBook className="text-gray-600" />
+                  <div>
+                    <p className="text-lg font-semibold text-gray-800">
+                      {course.title.toUpperCase()}
+                    </p>
+                    <p className="text-gray-600">{course?.description ?? ""}</p>
+                  </div>
                 </div>
+                
+                <div className="flex justify-between items-center mt-2">
+                  <p className="font-semibold">Eligibility:</p>
+                  <p className="text-gray-600">
+                    {course?.Eligibility || "Not specified"}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <p className="font-semibold">Fees:</p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={`text-gray-600 ${
+                        !isUnlocked ? "blur-sm select-none" : ""
+                      }`}
+                    >
+                      {courseFees.length > 0
+                        ? courseFees
+                            .map((fee) => `${fee.period}: ₹${fee.amount}`)
+                            .join(", ")
+                        : "N/A"}
+                    </p>
+                    <button
+                      onClick={() => handleUnlock(course._id, index)}
+                      className="bg-[#15892e] text-white py-1 px-3 rounded shadow-md shadow-black active:shadow-none"
+                    >
+                      Unlock {course.title.toUpperCase()} Fee
+                    </button>
+                  </div>
+                </div>
+                <hr className="my-4 border-gray-200" />
               </div>
-              <div className="flex justify-between items-center mt-2">
-                <p className="font-semibold">Eligibility:</p>
-                <p className="text-gray-600">
-                  {course?.Eligibility || "Not specified"}
-                </p>
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <p className="font-semibold">Fees:</p>
-                <button
-                  onClick={() =>
-                    handleInquiryCall(
-                      collegeData?.supoorts[index]?.mobile || mobile
-                    )
-                  }
-                  className="bg-teal-100 text-teal-600 py-1 px-3 rounded hover:bg-teal-200"
-                >
-                  Inquiry
-                </button>
-              </div>
-              <hr className="my-4 border-gray-200" />
-            </div>
-          ))
+            );
+          })
         ) : (
           <p className="text-gray-600">No courses available</p>
         )}
+        <div className="flex mb-8 md:flex-row flex-col flex-wrap">
+          {images.map((item, index)=>(
+            <img
+              key={index}
+              src={item}
+              className="sm:w-36 w-full h-36 rounded-md"
+            />
+          ))}
+        </div>
         {description && (
           <div className="text-gray-600 space-y-4">
             {description.split(/\d+\.\s*/).map((section, index) => {
               if (!section.trim()) return null;
 
-              const match = section.match(/^(.+?):\s*(.*)/s); // match "Heading: content"
-
+              const match = section.match(/^(.+?):\s*(.*)/s);
               if (match) {
                 const heading = match[1].trim();
                 const content = match[2].trim();
@@ -297,7 +400,6 @@ const CollegeDetails = () => {
                   </div>
                 );
               } else {
-                // Fallback for general intro or unmatched parts
                 return (
                   <p key={index} className="mt-1">
                     {section.trim()}

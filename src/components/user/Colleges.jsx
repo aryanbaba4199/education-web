@@ -8,18 +8,21 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 import { collegeApi, getterFunction } from "../../Api"; // Adjust path as needed
+import Swal from "sweetalert2";
 
 const College = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [colleges, setColleges] = useState([]);
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [supports, setSupports] = useState([]); // New state for support staff
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [slides, setSlides] = useState([]);
   const [fade, setFade] = useState(true);
-  const [isLoading, setIsLoading] = useState(true); // Track overall loading state
-  const [error, setError] = useState(null); // Track errors
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,6 +34,8 @@ const College = () => {
           getSlide(),
           getCategories(),
           getTags(),
+          getCourses(),
+          getSupports(), // Fetch support staff data
         ]);
       } catch (e) {
         setError("Failed to load data. Please try again later.");
@@ -106,10 +111,34 @@ const College = () => {
     }
   };
 
+  const getCourses = async () => {
+    try {
+      const res = await getterFunction(collegeApi.getCourses);
+      if (res.success) {
+        setCourses(res.data || []);
+      }
+    } catch (e) {
+      console.error("Error getting courses:", e);
+      setError("Error fetching courses.");
+    }
+  };
+
+  const getSupports = async () => {
+    try {
+      const res = await getterFunction(collegeApi.getSupport);
+      if (res.success) {
+        setSupports(res.data || []);
+      }
+    } catch (e) {
+      console.error("Error getting supports:", e);
+      setError("Error fetching support staff.");
+    }
+  };
+
   const filteredColleges = colleges.filter((college) => {
-    if (!college) return false; // Skip invalid college entries
+    if (!college) return false;
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return true; // Show all if query is empty
+    if (!query) return true;
 
     const collegeName = college.name?.toLowerCase() || "";
     const collegeLocation =
@@ -124,21 +153,67 @@ const College = () => {
       )
       .filter(Boolean)
       .join(" ");
+    const collegeCourses = (college.courseIds || [])
+      .map((courseId) =>
+        courses.find((course) => course._id === courseId)?.title?.toLowerCase()
+      )
+      .filter(Boolean)
+      .join(" ");
 
     return (
       collegeName.includes(query) ||
       collegeLocation.includes(query) ||
       collegeCategory.includes(query) ||
-      collegeTags.includes(query)
+      collegeTags.includes(query) ||
+      collegeCourses.includes(query)
     );
   });
 
+  const handleUnlock = (college, courseIndex) => {
+    try {
+      // Get the support ID corresponding to the course index
+      const supportId = college.supportIds[courseIndex];
+      if (!supportId) {
+        console.error("No support ID found for this course");
+        return;
+      }
+
+      // Find the support staff details
+      const support = supports.find((item) => item._id === supportId);
+      if (!support || !support.mobile) {
+        console.error("Support staff or mobile number not found");
+        return;
+      }
+      Swal.fire({
+        title : 'Unlocking',
+        text : 'Connecting to our representative to unlock the fee',
+        icon : 'success',
+        confirmButtonText : '',
+        timer : 3000,
+      })
+      setTimeout(() => {
+        window.location.href = `tel:${support.mobile}`;
+      }, 3000);
+      // Redirect to phone dialer with the support mobile number
+      
+    } catch (e) {
+      console.error("Error in unlocking:", e);
+    }
+  };
+
   const handleCall = () => {
-    window.location.href = "tel:+917005742790";
+    const appDetails = localStorage.getItem("appDetails");
+    window.location.href = `tel:${
+      JSON.parse(appDetails)?.mobile || "+917005742790"
+    }`;
   };
 
   const handleWhatsApp = () => {
-    window.open("https://wa.me/+917005742790", "_blank");
+    const appDetails = localStorage.getItem("appDetails");
+    window.open(
+      `https://wa.me/${JSON.parse(appDetails)?.whatsapp || "+917005742790"}`,
+      "_blank"
+    );
   };
 
   if (error) {
@@ -150,14 +225,14 @@ const College = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col h-screen overflow-hidden">
       {/* Slideshow Section */}
-      <div className="h-1/4 bg-white shadow-md border-b border-gray-200 overflow-hidden">
+      <div className="h-[30%] bg-white shadow-md border-b border-gray-200 overflow-hidden">
         {slides.length > 0 ? (
           <img
             src={slides[currentSlideIndex].image}
             alt="Slide"
-            className={`w-full h-[340px] object-cover transition-opacity duration-500 ${
+            className={`w-full h-[160px] object-cover transition-opacity duration-500 ${
               fade ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -165,114 +240,160 @@ const College = () => {
           <img
             src="https://i.pinimg.com/736x/70/42/f8/7042f811eba5fdd333382d89b9521cca.jpg"
             alt="Default"
-            className="w-full h-[340px] object-cover rounded"
+            className="w-full h-[160px] object-cover rounded"
           />
         )}
+        <div className="p-4 bg-white sticky top-0 z-50 shadow-md border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center">
+          <div className="flex gap-4">
+            <button
+              onClick={handleCall}
+              className="bg-teal-600 text-white py-1 px-4 rounded-md hover:bg-teal-700 flex items-center"
+            >
+              <FaPhone className="mr-2" />
+              Call
+            </button>
+            <button
+              onClick={handleWhatsApp}
+              className="bg-teal-600 text-white py-1 px-4 rounded-md hover:bg-teal-700 flex items-center"
+            >
+              <FaWhatsapp className="mr-2" />
+              WhatsApp
+            </button>
+            <div className="flex justify-center items-center rounded-md bg-red-600 text-white hover:bg-red-700">
+              <button
+                onClick={() => {
+                  localStorage.removeItem("edutoken");
+                  localStorage.removeItem("eduadmintoken");
+                  navigate("/");
+                }}
+                className="text-white px-4 py-1 rounded-md"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search Bar */}
       <div className="p-4 flex">
-        <div className="relative w-1/2 mx-auto">
+        <div className="relative w-full">
           <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
           <input
             type="text"
-            placeholder="Search by name, location, tags, or category"
+            placeholder="Search by name, location, tags, category, or course"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-600"
           />
         </div>
-        <div className="flex justify-center items-center bg-red-600 px-4 text-white hover:bg-red-700">
-          <button
-            onClick={() => {
-              localStorage.removeItem("edutoken");
-              localStorage.removeItem("eduadmintoken");
-              navigate("/");
-            }}
-            className="text-white px-4 py-1"
-          >
-            Log out
-          </button>
-          <FaArrowRight />
-        </div>
       </div>
 
       {/* College List */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 px-4 h-[40%] overflow-y-auto">
         {refreshing ? (
           <p className="text-center text-gray-600">Loading...</p>
         ) : filteredColleges.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredColleges.map((item) => (
-              <div
-                key={item._id}
-                onClick={() => navigate(`/college-details?id=${item._id}`)}
-                className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow"
-              >
-                {item.images?.length > 0 && (
-                  <img
-                    src={item.images[0]}
-                    alt={item.name}
-                    className="mt-2 w-full h-32 object-cover rounded"
-                  />
-                )}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-gray-800">
-                    {item.name}
-                  </h3>
-                  <FaSchool className="text-teal-600 text-xl" />
+            {filteredColleges.map((item) => {
+              const feesPerCourse = Math.ceil(
+                item.fees.length / item.courseIds.length
+              );
+              const collegeCourses = item.courseIds.map((courseId, index) => {
+                const course = courses.find((c) => c._id === courseId);
+                const courseFees = item.fees.slice(
+                  index * feesPerCourse,
+                  (index + 1) * feesPerCourse
+                );
+                return { course, fees: courseFees };
+              });
+
+              return (
+                <div
+                  key={item._id}
+                  className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex justify-between items-start">
+                  {item.images?.length > 0 ? 
+                    <img
+                      src={item.images[0]}
+                      alt={item.name}
+                      className="mt-2 w-28 h-28 object-cover rounded-full"
+                    />
+:
+                    <img
+                      src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png'
+                      alt={item.name}
+                      className="mt-2 w-28 h-28 object-cover rounded-full"
+                    />
+                  }
+                  <button
+                  onClick={() => {
+                    const base64Slides = btoa(JSON.stringify(slides));
+                    navigate(
+                      `/college-details?id=${item._id}&slide=${base64Slides}`
+                    );
+                  }}
+                  className="bg-gray-800 text-white px-4 py-1 rounded-md flex gap-2 items-center hover:bg-slate-700 shadow-md shadow-black">College Details <FaArrowRight/></button>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-gray-800">
+                      {item.name}
+                    </h3>
+                    
+                  </div>
+                  <p className="text-gray-600">
+                    University: {item.university || "N/A"}
+                  </p>
+                  <div className="mt-2">
+                    <p className="bg-teal-600 px-4 w-fit text-white rounded-md">
+                      Courses Offered
+                    </p>
+                    <div className="mt-2 space-y-2">
+                      {collegeCourses.map(({ course, fees }, idx) => (
+                        <div
+                          key={course?._id || idx}
+                          className="border p-2 rounded-md bg-white shadow-sm"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-semibold">
+                                {course?.title || "Unknown Course"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Fees:{" "}
+                                {fees.length > 0
+                                  ? fees
+                                      .map((fee) => (
+                                        <span key={fee.period}>
+                                          {fee.period}:{" "}
+                                          <span className="blur-sm select-none">
+                                            ₹{fee.amount}
+                                          </span>
+                                        </span>
+                                      ))
+                                      .reduce((prev, curr) => [prev, ", ", curr])
+                                  : "N/A"}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleUnlock(item, idx)}
+                              className="bg-[#15892e] px-4 py-1 text-white rounded-sm shadow-md shadow-black active:shadow-none"
+                            >
+                              Unlock
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-600">
-                  University: {item.university || "N/A"}
-                </p>
-                <p className="text-gray-600">
-                  Location: {item.address || "N/A"}
-                </p>
-                <p className="text-gray-500">
-                  {(parseInt(item.mainCityDistance) / 1000 || 0).toFixed(0)} KM
-                  from Main City
-                </p>
-                <p className="text-gray-600">
-                  Category:{" "}
-                  {categories.find((cat) => cat._id === item.category)?.title ||
-                    "N/A"}
-                </p>
-                <p className="text-gray-600">
-                  Tags:{" "}
-                  {(item.selectedTags || [])
-                    .map(
-                      (tagId) => tags.find((tag) => tag._id === tagId)?.title
-                    )
-                    .filter(Boolean)
-                    .join(", ") || "None"}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-center text-gray-600">No colleges found</p>
         )}
-      </div>
-
-      {/* Advertiser Contact */}
-      <div className="p-4 bg-white shadow-md border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center">
-        <span className="text-gray-600 mb-2 sm:mb-0">+91-7005742790</span>
-        <div className="flex gap-4">
-          <button
-            onClick={handleCall}
-            className="bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 flex items-center"
-          >
-            <FaPhone className="mr-2" />
-            Call
-          </button>
-          <button
-            onClick={handleWhatsApp}
-            className="bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 flex items-center"
-          >
-            <FaWhatsapp className="mr-2" />
-            WhatsApp
-          </button>
-        </div>
       </div>
     </div>
   );
