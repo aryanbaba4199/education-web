@@ -11,6 +11,8 @@ import {
   FaTrain,
   FaShuttleVan,
   FaPlane,
+  FaRoad,
+  FaBus,
 } from "react-icons/fa";
 import {
   collegeApi,
@@ -52,7 +54,9 @@ const CollegeDetails = () => {
 
   const handleCall = () => {
     const appDetails = localStorage.getItem("appDetails");
-    window.location.href = `tel:${JSON.parse(appDetails)?.mobile || "+917005742790"}`;
+    window.location.href = `tel:${
+      JSON.parse(appDetails)?.mobile || "+917005742790"
+    }`;
   };
 
   const handleWhatsApp = () => {
@@ -131,35 +135,60 @@ const CollegeDetails = () => {
     mainCityDistance,
     path,
     fees,
-    images, 
+    images,
     courseIds,
   } = collegeData?.college;
 
   const renderTitle = (heading) => {
-    if (heading === "**By Road") {
+    const normalized = heading.trim().toLowerCase();
+
+    if (normalized.includes("road")) {
       return (
-        <div className="flex justify-start gap-2 items-center bg-yellow-600 text-white w-fit px-8 rounded-sm">
-          <h3>By Road</h3>
+        <div className="flex justify-start gap-2 items-center bg-yellow-600 text-white w-fit px-4 py-1 rounded-md">
           <FaShuttleVan />
+          <h3>By Road</h3>
         </div>
       );
     }
-    if (heading === "**Train" || heading === "**By Train:") {
+
+    if (normalized.includes("train")) {
       return (
-        <div className="flex justify-start gap-2 items-center bg-green-600 text-white w-fit px-8 rounded-sm">
-          <h3>By Train</h3>
+        <div className="flex justify-start gap-2 items-center bg-green-600 text-white w-fit px-4 py-1 rounded-md">
           <FaTrain />
+          <h3>By Train</h3>
         </div>
       );
     }
-    if (heading === "**By Flight" || heading === "**Flight") {
+
+    if (normalized.includes("flight")) {
       return (
-        <div className="flex justify-start gap-2 items-center bg-lime-600 text-white w-fit px-8 rounded-sm">
-          <h3>By Flight</h3>
+        <div className="flex justify-start gap-2 items-center bg-blue-600 text-white w-fit px-4 py-1 rounded-md">
           <FaPlane />
+          <h3>By Flight</h3>
         </div>
       );
     }
+
+    if (normalized.includes("bus")) {
+      return (
+        <div className="flex justify-start gap-2 items-center bg-red-600 text-white w-fit px-4 py-1 rounded-md">
+          <FaBus />
+          <h3>By Bus</h3>
+        </div>
+      );
+    }
+
+    if (normalized.includes("alternative")) {
+      return (
+        <div className="flex justify-start gap-2 items-center bg-purple-600 text-white w-fit px-4 py-1 rounded-md">
+          <FaRoad />
+          <h3>Alternative Options</h3>
+        </div>
+      );
+    }
+
+    // fallback
+    return <h3 className="text-lg font-bold text-black">{heading}</h3>;
   };
 
   // Group fees by courseId
@@ -288,7 +317,7 @@ const CollegeDetails = () => {
                   {path.split(/\d+\.\s*/).map((section, index) => {
                     if (!section.trim()) return null;
 
-                    const match = section.match(/^(.+?):\s*(.*)/s);
+                    const match = section.match(/^\*\*(.+?):\s*(.*)/s);
                     if (match) {
                       const heading = match[1].trim();
                       const content = match[2].trim();
@@ -301,7 +330,7 @@ const CollegeDetails = () => {
                       );
                     } else {
                       return (
-                        <p key={index} className="mt-1">
+                        <p key={index} className="mt-1 whitespace-pre-line">
                           {section.trim()}
                         </p>
                       );
@@ -322,9 +351,9 @@ const CollegeDetails = () => {
         <hr className="my-4 border-gray-200" />
         {collegeData?.courses.length > 0 ? (
           collegeData.courses.map((course, index) => {
-            const courseFees = groupedFees.find(
-              (group) => group.courseId === course._id
-            )?.fees || [];
+            const courseFees =
+              groupedFees.find((group) => group.courseId === course._id)
+                ?.fees || [];
             const isUnlocked = unlockedCourses.includes(course._id);
 
             return (
@@ -338,7 +367,7 @@ const CollegeDetails = () => {
                     <p className="text-gray-600">{course?.description ?? ""}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center mt-2">
                   <p className="font-semibold">Eligibility:</p>
                   <p className="text-gray-600">
@@ -375,7 +404,7 @@ const CollegeDetails = () => {
           <p className="text-gray-600">No courses available</p>
         )}
         <div className="flex mb-8 md:flex-row flex-col flex-wrap">
-          {images.map((item, index)=>(
+          {images.map((item, index) => (
             <img
               key={index}
               src={item}
@@ -385,27 +414,30 @@ const CollegeDetails = () => {
         </div>
         {description && (
           <div className="text-gray-600 space-y-4">
-            {description.split(/\d+\.\s*/).map((section, index) => {
+            {description.split(/\*\*(.*?)\*\*/).map((section, index) => {
               if (!section.trim()) return null;
 
-              const match = section.match(/^(.+?):\s*(.*)/s);
-              if (match) {
-                const heading = match[1].trim();
-                const content = match[2].trim();
-
-                return (
-                  <div key={index}>
-                    <h3 className="text-lg font-bold text-black">{heading}</h3>
-                    <p className="mt-1">{content}</p>
-                  </div>
-                );
-              } else {
+              // If it's an even index, it's plain text between headings
+              if (index % 2 === 0) {
                 return (
                   <p key={index} className="mt-1">
                     {section.trim()}
                   </p>
                 );
               }
+
+              // If it's an odd index, it's a heading
+              const [heading, ...rest] = section.split(":");
+              const content = rest.join(":").trim();
+
+              return (
+                <div key={index}>
+                  <h3 className="text-lg font-bold text-black">
+                    {heading.trim()}
+                  </h3>
+                  {content && <p className="mt-1">{content}</p>}
+                </div>
+              );
             })}
           </div>
         )}
