@@ -68,6 +68,9 @@ const CollegeDetails = () => {
   };
 
   const getHomeDistance = async (add1) => {
+    if(distance){
+      return;
+    }
     try {
       const message = await getCurrentDistance(add1);
       const match = message.match(/Approx\s(\d+)\s?km/i);
@@ -308,7 +311,7 @@ const CollegeDetails = () => {
               <p className="font-semibold">How To Reach?</p>
               <button
                 onClick={() => getHomeDistance(address)}
-                className="bg-teal-600 text-white px-4 py-1 rounded shadow-md shadow-black active:shadow-sm"
+                className="bg-gray-700 text-white px-4 py-1 rounded shadow-md shadow-black active:shadow-sm"
               >
                 Calculate Distance & Path
               </button>
@@ -379,20 +382,20 @@ const CollegeDetails = () => {
                   <div className="flex items-center gap-2">
                     <p
                       className={`text-gray-600 ${
-                        !isUnlocked ? "blur-sm select-none" : ""
+                        !isUnlocked ? " select-none" : ""
                       }`}
                     >
                       {courseFees.length > 0
                         ? courseFees
                             .map((fee) => `${fee.period}: ₹${fee.amount}`)
                             .join(", ")
-                        : "N/A"}
+                        : "****"}
                     </p>
                     <button
                       onClick={() => handleUnlock(course._id, index)}
-                      className="bg-[#15892e] text-white py-1 px-3 rounded shadow-md shadow-black active:shadow-none"
+                      className="bg-gray-700 text-white py-1 px-3 rounded shadow-md shadow-black active:shadow-none"
                     >
-                      Unlock {course.title.toUpperCase()} Fee
+                      Unlock  Fee
                     </button>
                   </div>
                 </div>

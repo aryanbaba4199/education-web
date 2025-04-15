@@ -48,6 +48,12 @@ export const collegeApi  = {
     updateFeesTag : `${apiUrl}/college/uftag`,
     deleteFeesTag : `${apiUrl}/college/rftag`,
 
+    getPrompts : `${apiUrl}/college/gprompt`,
+    createPrompts : `${apiUrl}/college/cprompt`,
+    updatePrommts : `${apiUrl}/college/uprompt`,
+    removePrompts : `${apiUrl}/college/rprompt`,
+
+
 }
 
 export const distanceApi = {

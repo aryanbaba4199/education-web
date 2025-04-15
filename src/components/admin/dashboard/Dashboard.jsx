@@ -7,6 +7,7 @@ import {
   FaImages,
   FaChartLine,
   FaDollarSign,
+  FaComment,
 } from 'react-icons/fa';
 import { collegeApi, getterFunction } from '../../../Api';
 import { useNavigate } from 'react-router-dom';
@@ -75,6 +76,15 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold text-gray-700">Total Colleges</h2>
             <p className="text-2xl font-bold text-gray-800">{dashData?.colleges}</p>
             <p className="text-sm text-gray-500">Listed colleges</p>
+          </div>
+        </div>
+
+        <div onClick={()=>navigate('/admin/prompts')} className="bg-white shadow-md rounded-lg hover:cursor-pointer hover:shadow-black  p-6 flex items-center gap-4 hover:shadow-lg transition-shadow">
+          <FaComment className="text-4xl text-teal-600" />
+          <div>
+            <h2 className="text-xl font-semibold text-gray-700">Prompts</h2>
+            <p className="text-2xl font-bold text-gray-800">{dashData?.prompts}</p>
+            <p className="text-sm text-gray-500">There is {dashData?.prompts} AI Prompts </p>
           </div>
         </div>
 

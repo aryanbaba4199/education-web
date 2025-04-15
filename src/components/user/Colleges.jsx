@@ -185,17 +185,16 @@ const College = () => {
         return;
       }
       Swal.fire({
-        title : 'Unlocking',
-        text : 'Connecting to our representative to unlock the fee',
-        icon : 'success',
-        confirmButtonText : '',
-        timer : 3000,
-      })
+        title: "Unlocking",
+        text: "Connecting to our representative to unlock the fee",
+        icon: "success",
+        confirmButtonText: "",
+        timer: 3000,
+      });
       setTimeout(() => {
         window.location.href = `tel:${support.mobile}`;
       }, 3000);
       // Redirect to phone dialer with the support mobile number
-      
     } catch (e) {
       console.error("Error in unlocking:", e);
     }
@@ -313,39 +312,42 @@ const College = () => {
                   key={item._id}
                   className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow"
                 >
-                  <div className="flex justify-between items-start">
-                  {item.images?.length > 0 ? 
-                    <img
-                      src={item.images[0]}
-                      alt={item.name}
-                      className="mt-2 w-28 h-28 object-cover rounded-full"
-                    />
-:
-                    <img
-                      src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png'
-                      alt={item.name}
-                      className="mt-2 w-28 h-28 object-cover rounded-full"
-                    />
-                  }
-                  <button
-                  onClick={() => {
-                    const base64Slides = btoa(JSON.stringify(slides));
-                    navigate(
-                      `/college-details?id=${item._id}&slide=${base64Slides}`
-                    );
-                  }}
-                  className="bg-gray-800 text-white px-4 py-1 rounded-md flex gap-2 items-center hover:bg-slate-700 shadow-md shadow-black">College Details <FaArrowRight/></button>
+                  <div onClick={() => {
+                        const base64Slides = btoa(JSON.stringify(slides));
+                        navigate(
+                          `/college-details?id=${item._id}&slide=${base64Slides}`
+                        );
+                      }} className="flex justify-between items-start">
+                    {item.images?.length > 0 ? (
+                      <img
+                        src={item.images[0]}
+                        alt={item.name}
+                        className="mt-2 w-full rounded-md h-28 object-cover"
+                      />
+                    ) : (
+                      <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png"
+                        alt={item.name}
+                        className="mt-2 w-28 h-32 object-cover rounded-full"
+                      />
+                    )}
+                    
                   </div>
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-bold text-gray-800">
                       {item.name}
                     </h3>
-                    
                   </div>
                   <p className="text-gray-600">
-                    University: {item.university || "N/A"}
+                    University : {item.university || "N/A"}
                   </p>
-                  <div className="mt-2">
+                  <p className="text-gray-600">
+                    Address : {item.address || "N/A"}
+                  </p>
+                  <p className="text-gray-600">
+                    Main City Distance : {item.mainCityDistance/1000 || "N/A"} KM
+                  </p>
+                  {/* <div className="mt-2">
                     <p className="bg-teal-600 px-4 w-fit text-white rounded-md">
                       Courses Offered
                     </p>
@@ -386,7 +388,21 @@ const College = () => {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </div> */}
+
+                  <div className="flex justify-center mt-2 bg-gray-800 rounded-md items-center w-full">
+                  <button
+                      onClick={() => {
+                        const base64Slides = btoa(JSON.stringify(slides));
+                        navigate(
+                          `/college-details?id=${item._id}&slide=${base64Slides}`
+                        );
+                      }}
+                      className=" text-white px-4 py-2  rounded-md flex gap-2 items-center"
+                    >
+                      College Details <FaArrowRight />
+                    </button>
+                    </div>
                 </div>
               );
             })}

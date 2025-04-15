@@ -13,6 +13,7 @@ import Slider from "./components/admin/slider/Slider";
 import ErrorBoundaryWrapper from "./components/user/ErrorBoundaryWrapper";
 import PrivacyPolicy from "./components/user/Privacy";
 import AdminCollegeDetails from "./components/admin/College/AdminCollegeDetails";
+import Prompts from "./components/admin/dashboard/Prompts";
 
 
 const ProtectedRoute = ({children})=>{
@@ -55,6 +56,7 @@ const App = () => {
         <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
         <Route path="/admin/slider" element={<ProtectedRoute><Slider /></ProtectedRoute>} />
+        <Route path="/admin/prompts" element={<ProtectedRoute><Prompts /></ProtectedRoute>} />
       
       </Routes>
       </ErrorBoundaryWrapper>
