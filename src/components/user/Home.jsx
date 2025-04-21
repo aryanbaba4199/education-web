@@ -40,7 +40,7 @@ const Home = () => {
         localStorage.setItem('appDetails', JSON.stringify(res.data));
       }
     }catch(e){
-      console.error("Error getting app details", e);
+      console.error("Error getting app ", e);
     }
   }
 
@@ -75,7 +75,7 @@ const Home = () => {
     const userToken = localStorage.getItem("edutoken");
     console.log("Verifying", token, userToken);
     if (token) {
-      navigate("/admin/dashboard");
+      navigate("/admin");
     }else if(userToken){
       navigate("/colleges");
     }
@@ -125,6 +125,7 @@ const Home = () => {
 
       if (res.success) {
         setIsSubmitted(true);
+        localStorage.setItem("eduadmintoken", res.data);  
         localStorage.setItem("edutoken", res.data);
         navigate("/colleges");
       }
