@@ -29,7 +29,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Link } from "react-router-dom";
-import dayjs from "dayjs";
+
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -235,7 +235,7 @@ const Dashboard = () => {
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <Box className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center">
+        <div className="flex md:flex-row flex-col mb-8 justify-between items-center">
           <Typography variant="h4" className="font-bold text-gray-800 mb-6">
             Admin Dashboard
           </Typography>
@@ -254,12 +254,12 @@ const Dashboard = () => {
             </Link>
           </div>
         </div>
-        <div className="flex flex-wrap gap-8 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           {tabButtons.map((item, index) => (
             <button
               key={index}
               onClick={() => handleClick(item)}
-              className={`px-8 py-1 ${
+              className={`px-8 py-1 flex-1 ${
                 activeTab === item.value ? "bg-slate-600" : "bg-slate-800"
               } text-white hover:bg-slate-700 rounded-md`}
             >
@@ -323,11 +323,11 @@ const Dashboard = () => {
         )}
 
         {(activeTab !== 4 || selectedEmployeeId || employees.length === 0) && (
-          <Grid container spacing={3}>
+          <div className="flex flex-wrap md:flex-row flex-col gap-4">
             {/* Total Users */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                className="bg-white w-full rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
               >
                 <Box className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
@@ -517,7 +517,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-          </Grid>
+          </div>
         )}
       </Box>
     </Box>

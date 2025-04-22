@@ -310,11 +310,11 @@ const Calls = () => {
         {/* Table */}
         <div>
           <Typography>Filter</Typography>
-          <div className="flex flex-wrap gap-8 mb-8">
+          <div className="flex flex-wrap gap-2 mb-8">
             {filterButtons.map((item, index) => (
               <button
                 onClick={() => handleFilter(item)}
-                className={`px-4 ${
+                className={`px-4 flex-1 ${
                   activeFilter === item.value ? "bg-cyan-600" : "bg-slate-800"
                 } hover:bg-slate-700 text-white rounded-md py-1`}
                 key={item.value}
