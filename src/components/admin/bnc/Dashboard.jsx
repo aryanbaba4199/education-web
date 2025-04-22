@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { bncApi, getterFunction } from "../../../Api";
+import { bncApi, getterFunction, posterFunction } from "../../../Api";
 import {
   FaUsers,
   FaUserGraduate,
@@ -19,13 +19,28 @@ import {
   Alert,
   Button,
   Box,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Link } from "react-router-dom";
+import dayjs from "dayjs";
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState(1);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
 
   const getDashboard = async () => {
     try {
@@ -42,6 +57,131 @@ const Dashboard = () => {
       setError("An error occurred while fetching data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getTodaysData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getterFunction(bncApi.gettoadysdata);
+      if (res.success) {
+        setDashboardData(res.data.data);
+      } else {
+        setError("Failed to fetch today's data");
+      }
+    } catch (e) {
+      console.error("Error in getting today's data:", e);
+      setError("An error occurred while fetching today's data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDateData = async (fromDate, toDate) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await posterFunction(bncApi.getStatement, {
+        fromDate: fromDate.format("YYYY-MM-DD"),
+        toDate: toDate.format("YYYY-MM-DD"),
+      });
+      if (res.success) {
+        setDashboardData(res.data.data);
+      } else {
+        setError("Failed to fetch date range data");
+      }
+    } catch (e) {
+      console.error("Error in getting date range data:", e);
+      setError("An error occurred while fetching date range data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSelectedEmployeeId(""); // Reset selected employee
+      setDashboardData(null); // Clear dashboard data
+      const res = await getterFunction(bncApi.getUsers);
+      if (res.success) {
+        setEmployees(res.data || []); // Assuming res.data.data is an array of employees
+      } else {
+        setError("Failed to fetch employees");
+      }
+    } catch (e) {
+      console.error("Error in getting employees:", e);
+      setError("An error occurred while fetching employees");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEmployeeData = async (employeeId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getterFunction(`${bncApi.getuserDashboard}/${employeeId}`);
+      if (res.success) {
+        setDashboardData(res.data.data);
+      } else {
+        setError("Failed to fetch employee data");
+      }
+    } catch (e) {
+      console.error("Error in getting employee data:", e);
+      setError("An error occurred while fetching employee data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tabButtons = [
+    { title: "All", value: 1 },
+    { title: "Today", value: 2 },
+    { title: "Statement", value: 3 },
+    { title: "Employees", value: 4 },
+  ];
+
+  const handleClick = (item) => {
+    setActiveTab(item.value);
+    if (item.value === 1) {
+      setEmployees([]); // Clear employee list
+      setSelectedEmployeeId(""); // Clear selected employee
+      getDashboard();
+    } else if (item.value === 2) {
+      setEmployees([]); // Clear employee list
+      setSelectedEmployeeId(""); // Clear selected employee
+      getTodaysData();
+    } else if (item.value === 3) {
+      setEmployees([]); // Clear employee list
+      setSelectedEmployeeId(""); // Clear selected employee
+      setDashboardData(null); // Clear dashboard data
+    } else if (item.value === 4) {
+      getUsers();
+    }
+  };
+
+  const handleEmployeeSelect = (event) => {
+    const employeeId = event.target.value;
+    setSelectedEmployeeId(employeeId);
+    if (employeeId) {
+      getEmployeeData(employeeId);
+    } else {
+      setDashboardData(null); // Clear dashboard data if no employee is selected
+    }
+  };
+
+  const handleDateSubmit = () => {
+    if (fromDate && toDate) {
+      if (toDate.isBefore(fromDate)) {
+        setError("To date cannot be before from date");
+        return;
+      }
+      getDateData(fromDate, toDate);
+    } else {
+      setError("Please select both from and to dates");
     }
   };
 
@@ -76,7 +216,12 @@ const Dashboard = () => {
         <Alert
           severity="error"
           action={
-            <Button color="inherit" size="small" onClick={getDashboard}>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => handleClick({ value: activeTab })}
+            >
+
               Retry
             </Button>
           }
@@ -91,199 +236,289 @@ const Dashboard = () => {
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <Box className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center">
-        <Typography variant="h4" className="font-bold text-gray-800 mb-6">
-          Admin Dashboard
-        </Typography>
-        <div className="flex gap-4">
-            <Link className="px-4 py-1 rounded-sm bg-gray-600 hover:bg-gray-700 text-white" to='/admin/bnc/calls'>Calls</Link>
+          <Typography variant="h4" className="font-bold text-gray-800 mb-6">
+            Admin Dashboard
+          </Typography>
+          <div className="flex gap-4">
+            <Link
+              className="px-4 py-1 rounded-sm bg-gray-600 hover:bg-gray-700 text-white"
+              to="/admin/bnc/calls"
+            >
+              Calls
+            </Link>
+            <Link
+              className="px-4 py-1 rounded-sm bg-gray-600 hover:bg-gray-700 text-white"
+              to="/admin/bnc/createuser"
+            >
+              Create Employee
+            </Link>
+          </div>
         </div>
+        <div className="flex flex-wrap gap-8 mb-6">
+          {tabButtons.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => handleClick(item)}
+              className={`px-8 py-1 ${
+                activeTab === item.value ? "bg-slate-600" : "bg-slate-800"
+              } text-white hover:bg-slate-700 rounded-md`}
+            >
+              {item.title}
+            </button>
+          ))}
         </div>
-        <Grid container spacing={3}>
-          {/* Today's Total Users */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ display: "flex", alignItems: "center", p: 2 }}
-            >
-              <Box className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                <FaUsers size={24} />
-              </Box>
-              <CardContent className="p-0">
-                <Typography variant="body2" color="textSecondary">
-                  Today's Total Users
-                </Typography>
-                <Typography variant="h5" className="font-bold text-gray-800">
-                  {dashboardData?.Users || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
 
-          {/* Today's Total Admissions */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ display: "flex", alignItems: "center", p: 2 }}
-            >
-              <Box className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                <FaUserGraduate size={24} />
+        {activeTab === 3 && (
+          <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+                <DatePicker
+                  label="From Date"
+                  value={fromDate}
+                  onChange={(newValue) => setFromDate(newValue)}
+                  renderInput={(params) => <TextField {...params} />}
+                />
+                <DatePicker
+                  label="To Date"
+                  value={toDate}
+                  onChange={(newValue) => setToDate(newValue)}
+                  renderInput={(params) => <TextField {...params} />}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleDateSubmit}
+                  disabled={!fromDate || !toDate}
+                >
+                  Fetch Data
+                </Button>
               </Box>
-              <CardContent className="p-0">
-                <Typography variant="body2" color="textSecondary">
-                  Today's Total Admissions
-                </Typography>
-                <Typography variant="h5" className="font-bold text-gray-800">
-                  {dashboardData?.totalAdmissions || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+            </LocalizationProvider>
+          </Box>
+        )}
+        
+        {activeTab === 4 && employees.length > 0 && (
+          <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
+            <Typography variant="h6" className="font-bold text-gray-800 mb-4">
+              Select Employee
+            </Typography>
+            <FormControl fullWidth sx={{ maxWidth: 300 }}>
+              <InputLabel id="employee-select-label">Employee</InputLabel>
+              <Select
+                labelId="employee-select-label"
+                value={selectedEmployeeId}
+                label="Employee"
+                onChange={handleEmployeeSelect}
+              >
+                <MenuItem value="">
+                  <em>Select an employee</em>
+                </MenuItem>
+                {employees.map((employee) => (
+                  <MenuItem key={employee._id} value={employee._id}>
+                    {employee.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        )}
 
-          {/* Today's Total Calls */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ display: "flex", alignItems: "center", p: 2 }}
-            >
-              <Box className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
-                <FaPhone size={24} />
-              </Box>
-              <CardContent className="p-0">
-                <Typography variant="body2" color="textSecondary">
-                  Today's Total Calls
-                </Typography>
-                <Typography variant="h5" className="font-bold text-gray-800">
-                  {dashboardData?.totalCalls || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Expired Follow-ups */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ display: "flex", alignItems: "center", p: 2 }}
-            >
-              <Box className="p-3 rounded-full bg-red-100 text-red-600 mr-4">
-                <FaClock size={24} />
-              </Box>
-              <CardContent className="p-0">
-                <Typography variant="body2" color="textSecondary">
-                  Expired Follow-ups
-                </Typography>
-                <Typography variant="h5" className="font-bold text-gray-800">
-                  {dashboardData?.expiredFollowups || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Interested */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ display: "flex", alignItems: "center", p: 2 }}
-            >
-              <Box className="p-3 rounded-full bg-teal-100 text-teal-600 mr-4">
-                <FaThumbsUp size={24} />
-              </Box>
-              <CardContent className="p-0">
-                <Typography>Interested</Typography>
-                <Typography variant="h5" className="font-bold text-gray-800">
-                  {dashboardData?.interested || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Not Interested */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ display: "flex", alignItems: "center", p: 2 }}
-            >
-              <Box className="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
-                <FaThumbsDown size={24} />
-              </Box>
-              <CardContent className="p-0">
-                <Typography variant="body2" color="textSecondary">
-                  Not Interested
-                </Typography>
-                <Typography variant="h5" className="font-bold text-gray-800">
-                  {dashboardData?.notInterested || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Not Connected */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ display: "flex", alignItems: "center", p: 2 }}
-            >
-              <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                <FaPhoneSlash size={24} />
-              </Box>
-              <CardContent className="p-0">
-                <Typography variant="body2" color="textSecondary">
-                  Not Connected
-                </Typography>
-                <Typography variant="h5" className="font-bold text-gray-800">
-                  {dashboardData?.notConnected || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Best/Worst User */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Card
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-              sx={{ p: 2 }}
-            >
-              <CardContent className="p-0">
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Box className="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
-                    <FaStar size={24} />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="textSecondary">
-                      Best Employee
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      className="font-semibold text-gray-800"
-                    >
-                      {dashboardData?.bestUser
-                        ? dashboardData.bestUser.name
-                        : "None"}
-                    </Typography>
-                  </Box>
+        {(activeTab !== 4 || selectedEmployeeId || employees.length === 0) && (
+          <Grid container spacing={3}>
+            {/* Total Users */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              >
+                <Box className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                  <FaUsers size={24} />
                 </Box>
-                <Box display="flex" alignItems="center">
-                  <Box className="p-3 rounded-full bg-gray-100 text-gray-600 mr-4">
-                    <FaStar size={24} />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="textSecondary">
-                      Worst Employee
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      className="font-semibold text-gray-800"
-                    >
-                      {dashboardData?.worstUser
-                        ? dashboardData.worstUser.name
-                        : "None"}
-                    </Typography>
-                  </Box>
+                <CardContent className="p-0">
+                  <Typography variant="body2" color="textSecondary">
+                    Total Users
+                  </Typography>
+                  <Typography variant="h5" className="font-bold text-gray-800">
+                    {dashboardData?.Users || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Total Admissions */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              >
+                <Box className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                  <FaUserGraduate size={24} />
                 </Box>
-              </CardContent>
-            </Card>
+                <CardContent className="p-0">
+                  <Typography variant="body2" color="textSecondary">
+                    Total Admissions
+                  </Typography>
+                  <Typography variant="h5" className="font-bold text-gray-800">
+                    {dashboardData?.totalAdmissions || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Total Calls */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              >
+                <Box className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                  <FaPhone size={24} />
+                </Box>
+                <CardContent className="p-0">
+                  <Typography variant="body2" color="textSecondary">
+                    {activeTab === 2
+                      ? "Today's"
+                      : activeTab === 3
+                      ? "Selected Period"
+                      : activeTab === 4
+                      ? "Employee"
+                      : "Total"}{" "}
+                    Calls
+                  </Typography>
+                  <Typography variant="h5" className="font-bold text-gray-800">
+                    {dashboardData?.totalCalls || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Expired Follow-ups */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              >
+                <Box className="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                  <FaClock size={24} />
+                </Box>
+                <CardContent className="p-0">
+                  <Typography variant="body2" color="textSecondary">
+                    Expired Follow-ups
+                  </Typography>
+                  <Typography variant="h5" className="font-bold text-gray-800">
+                    {dashboardData?.expiredFollowups || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Interested */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              >
+                <Box className="p-3 rounded-full bg-teal-100 text-teal-600 mr-4">
+                  <FaThumbsUp size={24} />
+                </Box>
+                <CardContent className="p-0">
+                  <Typography variant="body2" color="textSecondary">
+                    Interested
+                  </Typography>
+                  <Typography variant="h5" className="font-bold text-gray-800">
+                    {dashboardData?.interested || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Not Interested */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              >
+                <Box className="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
+                  <FaThumbsDown size={24} />
+                </Box>
+                <CardContent className="p-0">
+                  <Typography variant="body2" color="textSecondary">
+                    Not Interested
+                  </Typography>
+                  <Typography variant="h5" className="font-bold text-gray-800">
+                    {dashboardData?.notInterested || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Not Connected */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              >
+                <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                  <FaPhoneSlash size={24} />
+                </Box>
+                <CardContent className="p-0">
+                  <Typography variant="body2" color="textSecondary">
+                    Not Connected
+                  </Typography>
+                  <Typography variant="h5" className="font-bold text-gray-800">
+                    {dashboardData?.notConnected || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Best/Worst User */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                sx={{ p: 2 }}
+              >
+                <CardContent className="p-0">
+                  <Box display="flex" alignItems="center" mb={2}>
+                    <Box className="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
+                      <FaStar size={24} />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="textSecondary">
+                        Best Employee
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        className="font-semibold text-gray-800"
+                      >
+                        {dashboardData?.bestUser
+                          ? dashboardData.bestUser.name
+                          : "None"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box display="flex" alignItems="center">
+                    <Box className="p-3 rounded-full bg-gray-100 text-gray-600 mr-4">
+                      <FaStar size={24} />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="textSecondary">
+                        Worst Employee
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        className="font-semibold text-gray-800"
+                      >
+                        {dashboardData?.worstUser
+                          ? dashboardData.worstUser.name
+                          : "None"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-        </Grid>
+        )}
       </Box>
     </Box>
   );

@@ -125,7 +125,7 @@ const Home = () => {
 
       if (res.success) {
         setIsSubmitted(true);
-        localStorage.setItem("eduadmintoken", res.data);  
+  
         localStorage.setItem("edutoken", res.data);
         navigate("/colleges");
       }

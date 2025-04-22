@@ -16,7 +16,14 @@ export const userApi = {
 export const bncApi = {
     adminDashboard : `${bncUrl}/admin/dashboard`,
     calllogs : `${bncUrl}/admin/admincalls`,
-    getacall : `${bncUrl}/admin/getcalldetails`
+    getacall : `${bncUrl}/admin/getcalldetails`,
+    gettoadysdata : `${bncUrl}/admin/gettoadysdata`,
+    getStatement : `${bncUrl}/admin/statement`,
+    getuserDashboard : `${bncUrl}/admin/empDashboard`,
+    getUsers : `${bncUrl}/admin/users`,
+    createUser : `${bncUrl}/user/signup`,
+    //----------Filter-------------------
+    filterCalls : `${bncUrl}/admin/filterCalls`,
 }
 
 export const collegeApi  = {

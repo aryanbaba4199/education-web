@@ -17,6 +17,7 @@ import PrivacyPolicy from "./components/user/Privacy";
 import AdminCollegeDetails from "./components/admin/College/AdminCollegeDetails";
 import Prompts from "./components/admin/dashboard/Prompts";
 import Admin from "./components/admin/Admin";
+import CreateUser from "./components/admin/bnc/CreateUser";
 
 
 const ProtectedRoute = ({children})=>{
@@ -64,6 +65,7 @@ const App = () => {
 
         <Route path="/admin/bnc/dashboard" element={<ProtectedRoute><BNCDashboard/></ProtectedRoute>}/>
         <Route path="/admin/bnc/calls" element={<ProtectedRoute><BncCalls/></ProtectedRoute>}/>
+        <Route path="/admin/bnc/createuser" element={<ProtectedRoute><CreateUser/> </ProtectedRoute>}/>
       </Routes>
       </ErrorBoundaryWrapper>
     </BrowserRouter>
