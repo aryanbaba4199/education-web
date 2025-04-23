@@ -12,6 +12,7 @@ import {
   Button,
   Box,
   Typography,
+  Dialog,
 } from '@mui/material';
 import {
   FaUser,
@@ -23,15 +24,20 @@ import {
   FaFileExcel,
   FaFilePdf,
   FaServer,
+  FaEdit,
+  FaEye,
 } from 'react-icons/fa';
 import { getterFunction, bncApi } from '../../../../Api';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import BncCallDetails from '../BncCallDetails';
 
 const NotIntrested = () => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
+    const [selectedId, setSelectedId] =useState(null)
+  
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -224,6 +230,12 @@ const NotIntrested = () => {
                       Feedback
                     </Box>
                   </TableCell>
+                   <TableCell className="bg-blue-100 font-semibold">
+                                      <Box className="flex items-center">
+                                        <FaEdit className="mr-2 text-blue-600" />
+                                        Action
+                                      </Box>
+                                    </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -238,6 +250,7 @@ const NotIntrested = () => {
                     <TableCell>{item.mobile}</TableCell>
                     <TableCell>{formatDate(item.updatedAt)}</TableCell>
                     <TableCell>{item.feedback}</TableCell>
+                                      <TableCell onClick={()=>setSelectedId(item._id)} className="hover:cursor-pointer hover:bg-gray-300"><FaEye className="text-green-600"/></TableCell>
                   
                   </TableRow>
                 ))}
@@ -252,6 +265,9 @@ const NotIntrested = () => {
           </Box>
         )}
       </Box>
+      <Dialog  open={selectedId!==null} onClose={()=>setSelectedId(null)}>
+              <BncCallDetails callId={selectedId} setCallId={setSelectedId}/>
+            </Dialog>
     </Box>
   );
 };

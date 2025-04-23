@@ -29,6 +29,7 @@ import {
 } from '@mui/material';
 
 const BncCallDetails = ({ callId, setCallId }) => {
+  console.log(callId)
   const [callData, setCallData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -100,6 +101,19 @@ const BncCallDetails = ({ callId, setCallId }) => {
         </Typography>
       </Box>
     );
+  }
+
+  const renderConnectionState = (id)=>{
+    switch(id){
+      case 1 : 
+      return <span className='text-green-600'>Intrested</span>
+      case 2 :
+        return <span className='text-red-600'>Not Intrested</span>
+      case 3 : 
+      return <span className='text-yellow-600'>Not Connected</span>
+      case 4 : 
+      return <span className='text-red-600'>Invalid Number</span>
+    }
   }
 
   return (
@@ -284,7 +298,7 @@ const BncCallDetails = ({ callId, setCallId }) => {
                   <TableCell>{interaction.endTime || 'N/A'}</TableCell>
                   <TableCell>{interaction.duration || 'N/A'}</TableCell>
                   <TableCell>{interaction.feedback || 'N/A'}</TableCell>
-                  <TableCell>{interaction.connectionState || 'N/A'}</TableCell>
+                  <TableCell>{renderConnectionState(interaction.connectionState) || 'N/A'}</TableCell>
                   <TableCell>{interaction.intrestLevel || 'N/A'}</TableCell>
                   <TableCell>{interaction.initBy || 'N/A'}</TableCell>
                   <TableCell>

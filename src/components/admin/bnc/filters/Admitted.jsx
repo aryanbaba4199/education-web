@@ -12,6 +12,7 @@ import {
   Button,
   Box,
   Typography,
+  Dialog,
 } from "@mui/material";
 import {
   FaUser,
@@ -24,16 +25,20 @@ import {
   FaFileExcel,
   FaFilePdf,
   FaServer,
+  FaEye,
+  FaEdit,
 } from "react-icons/fa";
 import { getterFunction, bncApi } from "../../../../Api";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import BncCallDetails from "../BncCallDetails";
 
 const Admitted = () => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [selectedId, setSelectedId] =useState(null)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const observer = useRef();
@@ -259,6 +264,12 @@ const Admitted = () => {
                       Closing Summary
                     </Box>
                   </TableCell>
+                  <TableCell className="bg-blue-100 font-semibold">
+                    <Box className="flex items-center">
+                      <FaEdit className="mr-2 text-blue-600" />
+                      Action
+                    </Box>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -276,6 +287,7 @@ const Admitted = () => {
                     <TableCell>{item.courseId ?? "N/A"}</TableCell>
                     <TableCell>{item.closedBy ?? "N/A"}</TableCell>
                     <TableCell>{item.closingSummary ?? "N/A"}</TableCell>
+                    <TableCell onClick={()=>setSelectedId(item._id)} className="hover:cursor-pointer hover:bg-gray-300"><FaEye className="text-green-600"/></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -289,6 +301,9 @@ const Admitted = () => {
           </Box>
         )}
       </Box>
+      <Dialog  open={selectedId!==null} onClose={()=>setSelectedId(null)}>
+        <BncCallDetails callId={selectedId} setCallId={setSelectedId}/>
+      </Dialog>
     </Box>
   );
 };

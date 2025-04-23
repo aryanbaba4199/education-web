@@ -20,10 +20,11 @@ export const bncApi = {
     gettoadysdata : `${bncUrl}/admin/gettoadysdata`,
     getStatement : `${bncUrl}/admin/statement`,
     getuserDashboard : `${bncUrl}/admin/empDashboard`,
+    getuserDateDashboard : `${bncUrl}/admin/empDateDash`,
     getUsers : `${bncUrl}/admin/users`,
     createUser : `${bncUrl}/user/signup`,
-    //----------Filter-------------------
     filterCalls : `${bncUrl}/admin/filterCalls`,
+    removeInvalid : `${bncUrl}/admin/removeInvalid`
 }
 
 export const collegeApi  = {
