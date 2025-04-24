@@ -28,7 +28,8 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -41,6 +42,7 @@ const Dashboard = () => {
   const [forthedate, setForTheDate] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const navigate = useNavigate();
 
   const getDashboard = async () => {
     try {
@@ -251,6 +253,22 @@ const Dashboard = () => {
       </Box>
     );
   }
+  const handleCardClick = (num)=>{
+    console.log(activeTab)
+    if(activeTab==1){
+      navigate(`/admin/bnc/calls?tabIndex=${num}`)
+    }
+    if(activeTab==2){
+      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=today`)
+    }
+    if(activeTab==3){
+      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=statement`)
+    }
+    if(activeTab==4){
+      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=employee`)
+    }
+    
+  }
 
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
@@ -364,7 +382,8 @@ const Dashboard = () => {
             {/* Total Users */}
             {activeTab === 1 && (
               <Grid item xs={12} sm={6} md={4} lg={3}>
-                <Card
+                <span className="hover:cursor-pointer" onClick={()=>setActiveTab(4)}>              <Card
+                
                   className="bg-white w-full rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                   sx={{ display: "flex", alignItems: "center", p: 2 }}
                 >
@@ -384,11 +403,14 @@ const Dashboard = () => {
                     </Typography>
                   </CardContent>
                 </Card>
+                </span>
+ 
               </Grid>
             )}
 
             {/* Total Admissions */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
+              <span className="hover:cursor-pointer" onClick={()=>handleCardClick(5)}>
               <Card
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
@@ -405,10 +427,12 @@ const Dashboard = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </span>
             </Grid>
 
             {/* Total Calls */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
+              <span className="hover:cursor-pointer" onClick={()=>handleCardClick(0)}>
               <Card
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
@@ -432,10 +456,12 @@ const Dashboard = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </span>
             </Grid>
 
             {/* Expired Follow-ups */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
+            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(6)}>
               <Card
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
@@ -452,10 +478,12 @@ const Dashboard = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </span>
             </Grid>
 
             {/* Interested */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
+            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(1)}>
               <Card
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
@@ -472,10 +500,12 @@ const Dashboard = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </span>
             </Grid>
 
             {/* Not Interested */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
+            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(2)}>
               <Card
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
@@ -492,10 +522,12 @@ const Dashboard = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </span>
             </Grid>
 
             {/* Not Connected */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
+            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(3)}>
               <Card
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
@@ -512,8 +544,10 @@ const Dashboard = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </span>
             </Grid>
             <Grid item xs={12} sm={6} md={4} lg={3}>
+            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(4)}>
               <Card
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
                 sx={{ display: "flex", alignItems: "center", p: 2 }}
@@ -530,6 +564,7 @@ const Dashboard = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </span>
             </Grid>
 
             {/* Best/Worst User */}

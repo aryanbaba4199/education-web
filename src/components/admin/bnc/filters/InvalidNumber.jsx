@@ -33,7 +33,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import BncCallDetails from '../BncCallDetails';
 
-const InvalidNumber = () => {
+const InvalidNumber = ({tabType}) => {
   const [data, setData] = useState([]);
     const [selectedId, setSelectedId] =useState(null)
   const [page, setPage] = useState(1);

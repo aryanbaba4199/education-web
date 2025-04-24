@@ -34,7 +34,7 @@ import "jspdf-autotable";
 import BncCallDetails from "../BncCallDetails";
 import Swal from "sweetalert2";
 
-const Missed = () => {
+const Missed = ({tabType}) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState(null);

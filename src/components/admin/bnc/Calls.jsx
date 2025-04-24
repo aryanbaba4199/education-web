@@ -29,6 +29,7 @@ import NotConnected from "./filters/NotConnected";
 import InvalidNumber from "./filters/InvalidNumber";
 import Admitted from "./filters/Admitted";
 import Missed from "./filters/Missed";
+import { useSearchParams } from "react-router-dom";
 
 const Calls = () => {
   const [calls, setCalls] = useState([]);
@@ -41,9 +42,14 @@ const Calls = () => {
   const [selectedCall, setSelectedCall] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
+  const [tabTypeforChild, setTabTypeforChild] = useState(null);
   const observer = useRef();
   const fetchInProgress = useRef(false);
   const lastCallElementRef = useRef();
+  const [searchParams] = useSearchParams();
+  const tabIndexValue = searchParams.get('tabIndex');
+  const tabType = searchParams.get('tabType');
+  
 
   const filterButtons = useMemo(() => [
     { title: "All", value: 0, color: "green" },
@@ -54,6 +60,23 @@ const Calls = () => {
     { title: "Admitted", value: 5, color: "green" },
     { title: "Missed Follow up", value: 6, color: "red" },
   ], []);
+
+  useEffect(()=>{
+    console.log('tab is', tabType)
+    if(tabType){
+      setTabTypeforChild(tabType);
+    }
+    if(tabIndexValue){
+      
+      if(!tabType && tabIndexValue==0){
+        fetchCalls(1);
+      }
+      console.log('setting value', tabIndexValue)
+      setActiveFilter(Number(tabIndexValue));
+    }
+    
+    
+  }, [tabIndexValue])
 
   const fetchCalls = useCallback(async (pageNum) => {
     if (loading || !hasNextPage || fetchInProgress.current) return;
@@ -191,12 +214,14 @@ const Calls = () => {
     return feedbackMap[cs] || "No Feedback";
   }, []);
 
+  
+
   useEffect(() => {
     setCalls([]);
     setFilteredCalls([]);
     setPage(1);
     setHasNextPage(true);
-    fetchCalls(1);
+    
   }, []);
 
   useEffect(() => {
@@ -345,12 +370,12 @@ const Calls = () => {
             </TableContainer>
           </div>
         )}
-        {activeFilter === 1 && <Intrested />}
-        {activeFilter === 2 && <NotIntrested />}
-        {activeFilter === 3 && <NotConnected />}
-        {activeFilter === 4 && <InvalidNumber />}
-        {activeFilter === 5 && <Admitted />}
-        {activeFilter === 6 && <Missed />}
+        {activeFilter === 1 && <Intrested  tabType={tabTypeforChild}/>}
+        {activeFilter === 2 && <NotIntrested tabType={tabTypeforChild} />}
+        {activeFilter === 3 && <NotConnected tabType={tabTypeforChild} />}
+        {activeFilter === 4 && <InvalidNumber tabType={tabTypeforChild} />}
+        {activeFilter === 5 && <Admitted tabType={tabTypeforChild} />}
+        {activeFilter === 6 && <Missed tabType={tabTypeforChild} />}
 
         {loading && (
           <Box display="flex" justifyContent="center" my={4}>

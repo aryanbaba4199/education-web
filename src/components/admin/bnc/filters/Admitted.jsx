@@ -34,7 +34,7 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import BncCallDetails from "../BncCallDetails";
 
-const Admitted = () => {
+const Admitted = ({tabType}) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -44,13 +44,15 @@ const Admitted = () => {
   const observer = useRef();
   const limit = 10; // Number of items per page
 
-  const getAdmitted = async (pageNum) => {
+  const getAdmitted = async (pageNum, tabType) => {
+    console.log("Fetching admitted calls...", tabType);
     try {
       setLoading(true);
       setError(null);
-      const res = await getterFunction(
-        `${bncApi.filterCalls}/${5}?page=${pageNum}&limit=${limit}`
-      );
+      const uri = tabType ? 
+      `${bncApi.filterCalls}/${5}/${tabType}?page=${pageNum}`
+      : `${bncApi.filterCalls}/${5}?page=${pageNum}`;
+      const res = await getterFunction(uri);
       if (res.success) {
         const newData = res.data.data || [];
         setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
@@ -67,7 +69,12 @@ const Admitted = () => {
   };
 
   useEffect(() => {
-    getAdmitted(1);
+    if(tabType){
+      getAdmitted(1, tabType);
+    }else{
+      getAdmitted(1);
+    }
+    
   }, []);
 
   const lastRowRef = useCallback(

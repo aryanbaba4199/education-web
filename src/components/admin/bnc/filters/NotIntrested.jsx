@@ -33,7 +33,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import BncCallDetails from '../BncCallDetails';
 
-const NotIntrested = () => {
+const NotIntrested = ({tabType}) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
     const [selectedId, setSelectedId] =useState(null)
