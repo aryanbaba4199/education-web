@@ -31,11 +31,16 @@ const AdminCollegeDetails = () => {
         getterFunction(collegeApi.getCategory),
       ]);
 
-      if (collegeRes.success) setCollege(collegeRes.data.college);
+      if (collegeRes.success) {
+        console.log("College Data:", collegeRes.data.college);
+        console.log("Fees:", collegeRes.data.college.fees);
+        console.log("Fee Tags:", collegeRes.data.college.feeTags);
+        setCollege(collegeRes.data.college);
+      }
       if (coursesRes.success) setCourses(coursesRes.data);
       if (tagsRes.success) setTags(tagsRes.data);
       if (supportRes.success) setSupport(supportRes.data);
-      if(catRes.success) setCategory(catRes.data)
+      if (catRes.success) setCategory(catRes.data);
     } catch (e) {
       console.error("Error fetching college data:", e);
     }
@@ -43,7 +48,6 @@ const AdminCollegeDetails = () => {
 
   const handleEdit = () => {
     setEditCollege(true);
-    // navigate("/admin/colleges", { state: { editMode: college } });
   };
 
   const handleDelete = async () => {
@@ -82,7 +86,7 @@ const AdminCollegeDetails = () => {
           );
           if (res.success) {
             Swal.fire("Deleted!", "Your college has been deleted.", "success");
-            navigate("/admin/colleges"); // Redirect back to college list
+            navigate("/admin/colleges");
           } else {
             Swal.fire("Error!", "Failed to delete the college.", "error");
           }
@@ -94,16 +98,48 @@ const AdminCollegeDetails = () => {
     }
   };
 
-  const renderFeeDetails = (fees) => {
+  // Map expected durations for courses (replace courseIds with actual values)
+  const courseDurations = {
+    // Example: Replace with actual courseId for BSC NURSING and GNM
+    "bsc123": 3, // BSC NURSING
+    "gnm456": 3, // GNM
+  };
+
+  const renderFeeDetails = (courseId, fees) => {
     if (!fees || fees.length === 0) return <p>No fee details available</p>;
+
+    // Filter fees for the specific courseId and limit to expected duration
+    const courseFees = fees
+      .filter((fee) => fee.courseId === courseId)
+      .slice(0, courseDurations[courseId] || 3); // Default to 3 if unknown
+
+    if (courseFees.length === 0) return <p>No fees for this course</p>;
+
+    // Get feeTags for this course
+    let feeTags = [];
+    if (college.feeTags) {
+      // Handle different feeTags structures
+      if (Array.isArray(college.feeTags) && college.feeTags.length > 0) {
+        if (typeof college.feeTags[0] === "string") {
+          // Flat array of strings
+          feeTags = [college.feeTags.find((tag) => tag === "Hostel, Food and accommodation") || "Hostel, Food and accommodation"];
+        } else if (typeof college.feeTags[0] === "object" && college.feeTags[0].courseId) {
+          // Array of { courseId, feeTags }
+          const courseFeeTags = college.feeTags.find((tag) => tag.courseId === courseId)?.feeTags || [];
+          feeTags = courseFeeTags.length > 0 ? courseFeeTags : ["Hostel, Food and accommodation"];
+        }
+      }
+    } else {
+      feeTags = ["Hostel, Food and accommodation"]; // Fallback
+    }
 
     return (
       <ul className="list-disc list-inside text-gray-600 text-sm">
-        {fees.map((fee, idx) => (
+        {courseFees.map((fee, idx) => (
           <li key={idx}>
-            {fee.period
-              ? `${fee.period} Fee: ₹${fee.amount}`
-              : `Course Fee: ₹${fee.amount}`}
+            {fee.period.includes("Course")
+              ? `Course Fee: ₹ ${fee.amount} (Includes: ${feeTags.join(", ")})`
+              : <span><span className="px-2 font-semibold">{fee.period} Fee : ₹ {fee.amount}</span> <span> {`( Includes : ${feeTags.join(", ")})`}</span> </span>}
           </li>
         ))}
       </ul>
@@ -165,8 +201,10 @@ const AdminCollegeDetails = () => {
               {college.university || "N/A"}
             </p>
             <p className="text-gray-600 mb-2">
-              <span className="font-semibold text-black mr-2">Category :</span>{" "}
-              <span className="bg-slate-700 text-white px-2 rounded-md">{categories.find(item=>item._id===college.category)?.title}</span>
+              <span className="font-semibold text-black mr-2">Category:</span>{" "}
+              <span className="bg-slate-700 text-white px-2 rounded-md">
+                {categories.find((item) => item._id === college.category)?.title || "N/A"}
+              </span>
             </p>
             <p className="text-gray-600 mb-2">
               <span className="font-semibold text-black mr-2">Address:</span>{" "}
@@ -179,7 +217,6 @@ const AdminCollegeDetails = () => {
                 : "N/A"}
             </p>
 
-            {/* Additional Fields if Present */}
             {college.mainCity && (
               <p className="text-gray-600 mb-2">
                 <span className="font-semibold text-black mr-2">Main City:</span>{" "}
@@ -194,7 +231,7 @@ const AdminCollegeDetails = () => {
             )}
             {college.mobile && (
               <p className="text-gray-600 mb-2 flex items-center">
-             <span className="font-semibold text-black mr-2">Mobile :</span>{" "}
+                <span className="font-semibold text-black mr-2">Mobile:</span>{" "}
                 {college.mobile}
               </p>
             )}
@@ -203,36 +240,12 @@ const AdminCollegeDetails = () => {
                 <span className="font-semibold text-black mr-2">Rank:</span> {college.rank}
               </p>
             )}
-
-{college.description && (
-  <div className="text-gray-600 space-y-4">
-    {college.path.split(/\d+\.\s*/).map((section, index) => {
-      if (!section.trim()) return null;
-
-      const match = section.match(/^(.+?):\s*(.*)/s); // match "Heading: content"
-
-      if (match) {
-        const heading = match[1].trim();
-        const content = match[2].trim();
-
-        return (
-          <div key={index}>
-            <h3 className="text-lg font-bold text-black">{heading}</h3>
-            <p className="mt-1">{content}</p>
-          </div>
-        );
-      } else {
-        // Fallback for general intro or unmatched parts
-        return (
-          <p key={index} className="mt-1">
-            {section.trim()}
-          </p>
-        );
-      }
-    })}
-  </div>
-)}
-
+            {college.path && (
+              <p className="text-gray-600 mb-2">
+                <span className="font-semibold text-black mr-2">How to Reach:</span>{" "}
+                {college.path}
+              </p>
+            )}
             {college.selectedTags?.length > 0 && (
               <p className="text-gray-600 mb-2 mt-2">
                 <span className="font-semibold text-black mr-2">Tags:</span>{" "}
@@ -244,33 +257,16 @@ const AdminCollegeDetails = () => {
                   .join(", ")}
               </p>
             )}
-            {college.feeTags?.length > 0 && (
-              <p className="text-gray-600 mb-2">
-                <span className="font-semibold text-black mr-2">Fee Includes:</span>{" "}
-                {college.feeTags.join(", ")}
-              </p>
-            )}
             {college.courseIds?.length > 0 && (
               <div className="mt-2">
                 <p className="text-gray-600 font-semibold text-black mr-2 mb-1">Courses:</p>
                 <ul className="list-disc list-inside text-gray-600 text-sm">
-                  {college.courseIds.map((courseId, index) => (
+                  {college.courseIds.map((courseId) => (
                     <li key={courseId}>
-                      {courses.find((c) => c._id === courseId)?.title ||
-                        courseId}
+                      {courses.find((c) => c._id === courseId)?.title || courseId}
                       {college.fees && college.fees.length > 0 && (
                         <div>
-                          {renderFeeDetails(
-                            college.fees.filter(
-                              (_, i) =>
-                                i >=
-                                  (index * college.fees.length) /
-                                    college.courseIds.length &&
-                                i <
-                                  ((index + 1) * college.fees.length) /
-                                    college.courseIds.length
-                            )
-                          )}
+                          {renderFeeDetails(courseId, college.fees)}
                         </div>
                       )}
                     </li>
@@ -326,26 +322,21 @@ const AdminCollegeDetails = () => {
               </div>
             )}
             {college.description && (
-              <div className="text-gray-600 space-y-4">
+              <div className="text-gray-600 space-y-4 mt-4">
                 {college.description.split(/\d+\.\s*/).map((section, index) => {
                   if (!section.trim()) return null;
 
-                  const match = section.match(/^(.+?):\s*(.*)/s); // match "Heading: content"
-
+                  const match = section.match(/^(.+?):\s*(.*)/s);
                   if (match) {
                     const heading = match[1].trim();
                     const content = match[2].trim();
-
                     return (
                       <div key={index}>
-                        <h3 className="text-lg font-bold text-black">
-                          {heading}
-                        </h3>
+                        <h3 className="text-lg font-bold text-black">{heading}</h3>
                         <p className="mt-1">{content}</p>
                       </div>
                     );
                   } else {
-                    // Fallback for general intro or unmatched parts
                     return (
                       <p key={index} className="mt-1">
                         {section.trim()}

@@ -72,21 +72,22 @@ const AddCollege = ({ handleClose, editMode }) => {
     fetchData();
 
     if (editMode) {
-      const mappedFees = editMode.courseIds.map((courseId, index) => {
-        const courseFees = editMode.fees
-          ? editMode.fees.slice(
-              index * Math.ceil(editMode.fees.length / editMode.courseIds.length),
-              (index + 1) * Math.ceil(editMode.fees.length / editMode.courseIds.length)
-            )
-          : [];
+      const courseDurations = {
+        "67f0ec2a6c84dfca101bb8c2": 3, // BSC NURSING
+        "67f0ec4a6c84dfca101bb8cf": 3, // GNM
+      };
+
+      const mappedFees = editMode.courseIds.map((courseId) => {
+        const courseFees = editMode.fees.filter((fee) => fee.courseId === courseId);
+        const maxDuration = courseDurations[courseId] || 3;
         const unit = courseFees.length > 0 && courseFees[0].period
           ? (courseFees[0].period.includes("Year") ? "Year" : "Semester")
           : "Course";
-        const duration = unit !== "Course" ? courseFees.length : "";
+        const duration = unit !== "Course" ? Math.min(courseFees.length, maxDuration) : "";
         const amounts = courseFees.length > 0
           ? unit === "Course"
             ? [courseFees[0].amount]
-            : courseFees.map(f => f.amount)
+            : courseFees.slice(0, duration || maxDuration).map(f => f.amount)
           : [""];
         const total = amounts.reduce((sum, amt) => sum + (parseFloat(amt) || 0), 0).toString();
 
@@ -96,7 +97,7 @@ const AddCollege = ({ handleClose, editMode }) => {
           duration,
           amounts,
           total,
-          feeTags: editMode.feeTags || [],
+          feeTags: Array.from(new Set(editMode.feeTags)) || [],
         };
       });
 
@@ -108,10 +109,10 @@ const AddCollege = ({ handleClose, editMode }) => {
         fees: mappedFees.length > 0 ? mappedFees : editMode.courseIds.map((courseId) => ({
           courseId,
           unit: "Year",
-          duration: "",
-          amounts: [],
+          duration: courseDurations[courseId] || 3,
+          amounts: Array(courseDurations[courseId] || 3).fill(""),
           total: "",
-          feeTags: editMode.feeTags || [],
+          feeTags: [],
         })),
         images: editMode.images || [],
         videos: editMode.videos || [],
@@ -228,9 +229,17 @@ const AddCollege = ({ handleClose, editMode }) => {
     });
   };
 
+  const courseDurations = {
+    "67f0ec2a6c84dfca101bb8c2": 3, // BSC NURSING
+    "67f0ec4a6c84dfca101bb8cf": 3, // GNM
+  };
+
   const handleFeeChange = (courseIndex, key, value, feeIndex = null) => {
     setFormData((prev) => {
       const updatedFees = [...prev.fees];
+      const courseId = updatedFees[courseIndex].courseId;
+      const maxDuration = courseDurations[courseId] || 3;
+
       if (key === "amounts" && feeIndex !== null) {
         updatedFees[courseIndex].amounts[feeIndex] = value;
         const total = updatedFees[courseIndex].amounts.reduce(
@@ -248,14 +257,16 @@ const AddCollege = ({ handleClose, editMode }) => {
           [key]: value,
         };
         if (key === "duration" && value) {
-          const num = parseInt(value) || 0;
+          const num = Math.min(parseInt(value) || 0, maxDuration);
           updatedFees[courseIndex].amounts = Array(num).fill("");
           updatedFees[courseIndex].total = "";
+          updatedFees[courseIndex].feeTags = updatedFees[courseIndex].feeTags || [];
         }
         if (key === "unit" && value === "Course") {
           updatedFees[courseIndex].duration = "";
           updatedFees[courseIndex].amounts = [""];
           updatedFees[courseIndex].total = "";
+          updatedFees[courseIndex].feeTags = updatedFees[courseIndex].feeTags || [];
         }
       }
       return { ...prev, fees: updatedFees };
@@ -276,8 +287,8 @@ const AddCollege = ({ handleClose, editMode }) => {
           existingFeesMap.get(courseId) || {
             courseId,
             unit: "Year",
-            duration: "",
-            amounts: [],
+            duration: courseDurations[courseId] || 3,
+            amounts: Array(courseDurations[courseId] || 3).fill(""),
             total: "",
             feeTags: [],
           }
@@ -330,28 +341,28 @@ const AddCollege = ({ handleClose, editMode }) => {
     console.log("Original fees in handleUpdate:", formData.fees);
     try {
       const feesArray = Array.isArray(formData.fees) ? formData.fees : [];
-      let transformedFees;
-      let allFeeTags;
-
-      if (feesArray.length > 0 && "period" in feesArray[0]) {
-        transformedFees = feesArray;
-        allFeeTags = formData.feeTags || [];
-      } else {
-        allFeeTags = feesArray.map(fee => fee.feeTags || []).flat();
-        transformedFees = feesArray
-          .map((fee) => {
-            if (fee.unit === "Course") {
-              return { courseId: fee.courseId, period: "Course", amount: fee.amounts[0] || "0", total: fee.total || "0" };
-            }
-            return fee.amounts.map((amount, idx) => ({
-              courseId: fee.courseId,
-              period: `${fee.unit} ${idx + 1}`,
-              amount: amount || "0",
+      const allFeeTags = Array.from(new Set(feesArray.map(fee => fee.feeTags || []).flat()));
+      const transformedFees = feesArray
+        .map((fee) => {
+          const maxDuration = courseDurations[fee.courseId] || 3;
+          if (fee.unit === "Course") {
+            return { 
+              courseId: fee.courseId, 
+              period: "Course", 
+              amount: fee.amounts[0] || "0", 
               total: fee.total || "0",
-            }));
-          })
-          .flat();
-      }
+              feeTags: fee.feeTags || []
+            };
+          }
+          return fee.amounts.slice(0, Math.min(parseInt(fee.duration) || 3, maxDuration)).map((amount, idx) => ({
+            courseId: fee.courseId,
+            period: `${fee.unit} ${idx + 1}`,
+            amount: amount || "0",
+            total: fee.total || "0",
+            feeTags: fee.feeTags || []
+          }));
+        })
+        .flat();
 
       const payload = {
         ...formData,
@@ -391,17 +402,25 @@ const AddCollege = ({ handleClose, editMode }) => {
     setLoader("Submitting...");
     try {
       const feesArray = Array.isArray(formData.fees) ? formData.fees : [];
-      const allFeeTags = feesArray.map(fee => fee.feeTags || []).flat();
+      const allFeeTags = Array.from(new Set(feesArray.map(fee => fee.feeTags || []).flat()));
       const transformedFees = feesArray
         .map((fee) => {
+          const maxDuration = courseDurations[fee.courseId] || 3;
           if (fee.unit === "Course") {
-            return { courseId: fee.courseId, period: "Course", amount: fee.amounts[0] || "0", total: fee.total || "0" };
+            return { 
+              courseId: fee.courseId, 
+              period: "Course", 
+              amount: fee.amounts[0] || "0", 
+              total: fee.total || "0",
+              feeTags: fee.feeTags || []
+            };
           }
-          return fee.amounts.map((amount, idx) => ({
+          return fee.amounts.slice(0, Math.min(parseInt(fee.duration) || 3, maxDuration)).map((amount, idx) => ({
             courseId: fee.courseId,
             period: `${fee.unit} ${idx + 1}`,
             amount: amount || "0",
             total: fee.total || "0",
+            feeTags: fee.feeTags || []
           }));
         })
         .flat();
@@ -749,7 +768,7 @@ const AddCollege = ({ handleClose, editMode }) => {
                         variant="outlined"
                         size="small"
                         fullWidth
-                        inputProps={{ min: 1 }}
+                        inputProps={{ min: 1, max: courseDurations[courseId] || 3 }}
                         required
                         className="mt-2"
                       />
@@ -761,7 +780,7 @@ const AddCollege = ({ handleClose, editMode }) => {
                           {Array.from(
                             {
                               length:
-                                parseInt(formData.fees[index]?.duration) || 0,
+                                Math.min(parseInt(formData.fees[index]?.duration) || 0, courseDurations[courseId] || 3),
                             },
                             (_, i) => (
                               <TextField
