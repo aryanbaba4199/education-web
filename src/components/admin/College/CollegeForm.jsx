@@ -39,6 +39,7 @@ const AddCollege = ({ handleClose, editMode }) => {
     courseIds: [],
     supportIds: [],
     fees: [], // { courseId, unit, duration, amounts: [], total, feeTags: [] }
+    feeTags: [],
     images: [],
     videos: [],
   });
@@ -75,29 +76,33 @@ const AddCollege = ({ handleClose, editMode }) => {
       const courseDurations = {
         "67f0ec2a6c84dfca101bb8c2": 3, // BSC NURSING
         "67f0ec4a6c84dfca101bb8cf": 3, // GNM
+        "67f3e796bba8ec74e084ec5f": 3, // Example course
+        "67f6274bb3e40a64276843c3": 2, // Example course
       };
 
       const mappedFees = editMode.courseIds.map((courseId) => {
-        const courseFees = editMode.fees.filter((fee) => fee.courseId === courseId);
-        const maxDuration = courseDurations[courseId] || 3;
+        const courseFees = Array.isArray(editMode.fees)
+          ? editMode.fees.filter((fee) => fee.courseId.toString() === courseId)
+          : [];
+        const defaultDuration = courseDurations[courseId] || 3;
         const unit = courseFees.length > 0 && courseFees[0].period
-          ? (courseFees[0].period.includes("Year") ? "Year" : "Semester")
-          : "Course";
-        const duration = unit !== "Course" ? Math.min(courseFees.length, maxDuration) : "";
+          ? (courseFees[0].period.includes("Year") ? "Year" : courseFees[0].period.includes("Semester") ? "Semester" : "Course")
+          : "Year";
+        const duration = unit !== "Course" ? (courseFees.length || defaultDuration) : 1;
         const amounts = courseFees.length > 0
-          ? unit === "Course"
-            ? [courseFees[0].amount]
-            : courseFees.slice(0, duration || maxDuration).map(f => f.amount)
-          : [""];
-        const total = amounts.reduce((sum, amt) => sum + (parseFloat(amt) || 0), 0).toString();
+          ? Array(duration).fill("").map((_, idx) => courseFees[idx]?.amount || "")
+          : Array(unit === "Course" ? 1 : duration).fill("");
+        const total = courseFees.length > 0
+          ? courseFees[0].total || amounts.reduce((sum, amt) => sum + (parseInt(amt) || 0), 0).toString()
+          : amounts.reduce((sum, amt) => sum + (parseInt(amt) || 0), 0).toString();
 
         return {
           courseId,
           unit,
           duration,
-          amounts,
+          amounts: amounts.length ? amounts : Array(duration).fill(""),
           total,
-          feeTags: Array.from(new Set(editMode.feeTags)) || [],
+          feeTags: Array.from(new Set(courseFees.flatMap(f => f.feeTags || []).concat(editMode.feeTags || []))) || [],
         };
       });
 
@@ -106,14 +111,8 @@ const AddCollege = ({ handleClose, editMode }) => {
         selectedTags: editMode.selectedTags || [],
         courseIds: editMode.courseIds || [],
         supportIds: editMode.supportIds || [],
-        fees: mappedFees.length > 0 ? mappedFees : editMode.courseIds.map((courseId) => ({
-          courseId,
-          unit: "Year",
-          duration: courseDurations[courseId] || 3,
-          amounts: Array(courseDurations[courseId] || 3).fill(""),
-          total: "",
-          feeTags: [],
-        })),
+        fees: mappedFees,
+        feeTags: editMode.feeTags || [],
         images: editMode.images || [],
         videos: editMode.videos || [],
       });
@@ -156,6 +155,11 @@ const AddCollege = ({ handleClose, editMode }) => {
       }
     } catch (e) {
       console.error("Error generating description:", e);
+      Swal.fire({
+        title: "Error",
+        text: "Failed to generate description",
+        icon: "error",
+      });
     }
     setLoader(null);
   };
@@ -175,6 +179,11 @@ const AddCollege = ({ handleClose, editMode }) => {
       }
     } catch (e) {
       console.error("Error in correction ", e);
+      Swal.fire({
+        title: "Error",
+        text: "Failed to correct path",
+        icon: "error",
+      });
     }
     setLoader(null);
   };
@@ -229,45 +238,73 @@ const AddCollege = ({ handleClose, editMode }) => {
     });
   };
 
-  const courseDurations = {
-    "67f0ec2a6c84dfca101bb8c2": 3, // BSC NURSING
-    "67f0ec4a6c84dfca101bb8cf": 3, // GNM
-  };
-
   const handleFeeChange = (courseIndex, key, value, feeIndex = null) => {
     setFormData((prev) => {
       const updatedFees = [...prev.fees];
-      const courseId = updatedFees[courseIndex].courseId;
-      const maxDuration = courseDurations[courseId] || 3;
+      const courseId = updatedFees[courseIndex]?.courseId;
+
+      if (!courseId) return prev;
+
+      // Ensure amounts is always an array
+      if (!Array.isArray(updatedFees[courseIndex].amounts)) {
+        updatedFees[courseIndex].amounts = Array(updatedFees[courseIndex].duration || 1).fill("");
+      }
 
       if (key === "amounts" && feeIndex !== null) {
+        if (value && !/^\d+$/.test(value)) {
+          Swal.fire({
+            title: "Invalid Amount",
+            text: "Amount must be a whole number",
+            icon: "error",
+          });
+          return prev;
+        }
         updatedFees[courseIndex].amounts[feeIndex] = value;
         const total = updatedFees[courseIndex].amounts.reduce(
-          (sum, amt) => sum + (parseFloat(amt) || 0),
+          (sum, amt) => sum + (parseInt(amt) || 0),
           0
         );
         updatedFees[courseIndex].total = total.toString();
+      } else if (key === "total") {
+        if (value && !/^\d+$/.test(value)) {
+          Swal.fire({
+            title: "Invalid Total",
+            text: "Total must be a whole number",
+            icon: "error",
+          });
+          return prev;
+        }
+        updatedFees[courseIndex].total = value;
       } else if (key === "feeTags") {
         updatedFees[courseIndex].feeTags = value;
-      } else if (key === "total") {
-        updatedFees[courseIndex].total = value;
-      } else {
-        updatedFees[courseIndex] = {
-          ...updatedFees[courseIndex],
-          [key]: value,
-        };
-        if (key === "duration" && value) {
-          const num = Math.min(parseInt(value) || 0, maxDuration);
-          updatedFees[courseIndex].amounts = Array(num).fill("");
-          updatedFees[courseIndex].total = "";
-          updatedFees[courseIndex].feeTags = updatedFees[courseIndex].feeTags || [];
+      } else if (key === "unit") {
+        updatedFees[courseIndex].unit = value || "Year";
+        if (value === "Course") {
+          updatedFees[courseIndex].duration = 1;
+          updatedFees[courseIndex].amounts = [updatedFees[courseIndex].amounts[0] || ""];
+          updatedFees[courseIndex].total = updatedFees[courseIndex].amounts[0] || "";
+        } else {
+          const duration = updatedFees[courseIndex].duration || 3;
+          updatedFees[courseIndex].amounts = Array(duration).fill("").map(
+            (val, idx) => updatedFees[courseIndex].amounts[idx] || ""
+          );
         }
-        if (key === "unit" && value === "Course") {
-          updatedFees[courseIndex].duration = "";
-          updatedFees[courseIndex].amounts = [""];
-          updatedFees[courseIndex].total = "";
-          updatedFees[courseIndex].feeTags = updatedFees[courseIndex].feeTags || [];
+      } else if (key === "duration") {
+        const num = value === "" ? 1 : parseInt(value) || 1;
+        const currentAmounts = Array.isArray(updatedFees[courseIndex].amounts)
+          ? updatedFees[courseIndex].amounts
+          : [];
+        const newAmounts = Array(num).fill("");
+        for (let i = 0; i < Math.min(currentAmounts.length, num); i++) {
+          newAmounts[i] = currentAmounts[i] || "";
         }
+        updatedFees[courseIndex].duration = num;
+        updatedFees[courseIndex].amounts = newAmounts;
+        const total = newAmounts.reduce(
+          (sum, amt) => sum + (parseInt(amt) || 0),
+          0
+        );
+        updatedFees[courseIndex].total = total.toString();
       }
       return { ...prev, fees: updatedFees };
     });
@@ -275,6 +312,8 @@ const AddCollege = ({ handleClose, editMode }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log("handleChange:", { name, value });
+
     if (name === "courseIds") {
       const selectedOptions = Array.from(
         e.target.selectedOptions,
@@ -283,16 +322,18 @@ const AddCollege = ({ handleClose, editMode }) => {
       setFormData((prev) => {
         const newCourseIds = selectedOptions;
         const existingFeesMap = new Map(prev.fees.map(fee => [fee.courseId, fee]));
-        const newFees = newCourseIds.map((courseId) => 
-          existingFeesMap.get(courseId) || {
+        const newFees = newCourseIds.map((courseId) => {
+          const existingFee = existingFeesMap.get(courseId);
+          const duration = existingFee?.duration || 3;
+          return existingFee || {
             courseId,
             unit: "Year",
-            duration: courseDurations[courseId] || 3,
-            amounts: Array(courseDurations[courseId] || 3).fill(""),
+            duration,
+            amounts: Array(duration).fill(""),
             total: "",
-            feeTags: [],
-          }
-        );
+            feeTags: prev.feeTags || [],
+          };
+        });
         return {
           ...prev,
           courseIds: newCourseIds,
@@ -310,8 +351,10 @@ const AddCollege = ({ handleClose, editMode }) => {
       const index = parseInt(name.split("-")[2]);
       handleFeeChange(index, "duration", value);
     } else if (name.startsWith("fee-amount-")) {
-      const [_, __, courseIndex, feeIndex] = name.split("-");
-      handleFeeChange(parseInt(courseIndex), "amounts", value, parseInt(feeIndex));
+      const parts = name.split("-");
+      const courseIndex = parseInt(parts[2]);
+      const feeIndex = parseInt(parts[3]);
+      handleFeeChange(courseIndex, "amounts", value, feeIndex);
     } else if (name.startsWith("fee-total-")) {
       const index = parseInt(name.split("-")[2]);
       handleFeeChange(index, "total", value);
@@ -327,7 +370,8 @@ const AddCollege = ({ handleClose, editMode }) => {
       updatedFees[courseIndex].feeTags = checked
         ? [...currentFeeTags, tagTitle]
         : currentFeeTags.filter((tag) => tag !== tagTitle);
-      return { ...prev, fees: updatedFees };
+      const allFeeTags = Array.from(new Set(updatedFees.flatMap(fee => fee.feeTags || [])));
+      return { ...prev, fees: updatedFees, feeTags: allFeeTags };
     });
   };
 
@@ -336,46 +380,87 @@ const AddCollege = ({ handleClose, editMode }) => {
     setSuggestions([]);
   };
 
+  const validateForm = () => {
+    if (!formData.name || formData.name.length < 3) {
+      Swal.fire({
+        title: "Invalid Name",
+        text: "Name must be at least 3 characters",
+        icon: "error",
+      });
+      return false;
+    }
+    if (!formData.description || formData.description.length < 10) {
+      Swal.fire({
+        title: "Invalid Description",
+        text: "Description must be at least 10 characters",
+        icon: "error",
+      });
+      return false;
+    }
+    if (formData.mobile && !/^\d{10}$/.test(formData.mobile)) {
+      Swal.fire({
+        title: "Invalid Mobile",
+        text: "Mobile number must be 10 digits",
+        icon: "error",
+      });
+      return false;
+    }
+    if (!formData.courseIds.length) {
+      Swal.fire({
+        title: "Invalid Courses",
+        text: "At least one course must be selected",
+        icon: "error",
+      });
+      return false;
+    }
+    for (const fee of formData.fees) {
+      if (!fee.courseId || !Array.isArray(fee.amounts)) {
+        Swal.fire({
+          title: "Invalid Fee Data",
+          text: "Each course must have valid fee data",
+          icon: "error",
+        });
+        return false;
+      }
+      if (!fee.amounts.some(amt => amt && /^\d+$/.test(amt))) {
+        Swal.fire({
+          title: "Invalid Fees",
+          text: "Each course must have at least one valid whole number fee amount",
+          icon: "error",
+        });
+        return false;
+      }
+      if (fee.unit !== "Course" && fee.amounts.length !== fee.duration) {
+        Swal.fire({
+          title: "Invalid Fee Amounts",
+          text: `Number of fee amounts (${fee.amounts.length}) does not match duration (${fee.duration}) for course`,
+          icon: "error",
+        });
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleUpdate = async (formData) => {
     setLoader("Updating...");
-    console.log("Original fees in handleUpdate:", formData.fees);
+    console.log("Update Form Data Fees:", formData.fees);
+
     try {
-      const feesArray = Array.isArray(formData.fees) ? formData.fees : [];
-      const allFeeTags = Array.from(new Set(feesArray.map(fee => fee.feeTags || []).flat()));
-      const transformedFees = feesArray
-        .map((fee) => {
-          const maxDuration = courseDurations[fee.courseId] || 3;
-          if (fee.unit === "Course") {
-            return { 
-              courseId: fee.courseId, 
-              period: "Course", 
-              amount: fee.amounts[0] || "0", 
-              total: fee.total || "0",
-              feeTags: fee.feeTags || []
-            };
-          }
-          return fee.amounts.slice(0, Math.min(parseInt(fee.duration) || 3, maxDuration)).map((amount, idx) => ({
-            courseId: fee.courseId,
-            period: `${fee.unit} ${idx + 1}`,
-            amount: amount || "0",
-            total: fee.total || "0",
-            feeTags: fee.feeTags || []
-          }));
-        })
-        .flat();
+      
 
-      const payload = {
-        ...formData,
-        fees: transformedFees,
-        feeTags: allFeeTags,
-      };
+      
 
-      console.log("Update Payload:", payload);
+     
+
+      
+      console.log("Update Payload:", formData);
 
       const res = await updaterFunction(
         `${collegeApi.updateCollege}/${formData._id}`,
-        payload
+        formData
       );
+
       if (res?.success) {
         Swal.fire({
           title: "College Updated Successfully!",
@@ -383,9 +468,10 @@ const AddCollege = ({ handleClose, editMode }) => {
           confirmButtonText: "Okay",
         });
         handleClose();
+      } else {
+        throw new Error(res?.error || "Failed to update college");
       }
     } catch (e) {
-      setLoader(null);
       console.error("Error updating college:", e);
       Swal.fire({
         title: "Error updating college!",
@@ -393,37 +479,66 @@ const AddCollege = ({ handleClose, editMode }) => {
         icon: "error",
         confirmButtonText: "Okay",
       });
+    } finally {
+      setLoader(null);
     }
-    setLoader(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setLoader("Submitting...");
     try {
       const feesArray = Array.isArray(formData.fees) ? formData.fees : [];
-      const allFeeTags = Array.from(new Set(feesArray.map(fee => fee.feeTags || []).flat()));
       const transformedFees = feesArray
-        .map((fee) => {
-          const maxDuration = courseDurations[fee.courseId] || 3;
-          if (fee.unit === "Course") {
-            return { 
-              courseId: fee.courseId, 
-              period: "Course", 
-              amount: fee.amounts[0] || "0", 
-              total: fee.total || "0",
-              feeTags: fee.feeTags || []
-            };
+        .filter(fee => fee.courseId && Array.isArray(fee.amounts) && (fee.amounts.some(amt => amt !== "") || fee.total))
+        .flatMap((fee) => {
+          const unit = fee.unit || "Year";
+          const duration = parseInt(fee.duration) || 1;
+          const feeTags = Array.isArray(fee.feeTags) ? fee.feeTags : [];
+          // Ensure amounts is an array with length equal to duration
+          const amounts = Array.isArray(fee.amounts)
+            ? Array(duration).fill("").map((_, idx) => fee.amounts[idx] || "")
+            : Array(duration).fill("");
+          console.log("Transforming Fee:", { courseId: fee.courseId, unit, duration, amounts, total: fee.total });
+
+          if (unit === "Course") {
+            return [{
+              courseId: fee.courseId,
+              period: "Course",
+              amount: amounts[0] || fee.total || "0",
+              total: fee.total || amounts[0] || "0",
+              feeTags,
+            }];
           }
-          return fee.amounts.slice(0, Math.min(parseInt(fee.duration) || 3, maxDuration)).map((amount, idx) => ({
-            courseId: fee.courseId,
-            period: `${fee.unit} ${idx + 1}`,
-            amount: amount || "0",
-            total: fee.total || "0",
-            feeTags: fee.feeTags || []
-          }));
-        })
-        .flat();
+
+          if (amounts.every(amt => amt === "") && fee.total) {
+            return [{
+              courseId: fee.courseId,
+              period: `${unit} 1`,
+              amount: fee.total || "0",
+              total: fee.total || "0",
+              feeTags,
+            }];
+          }
+
+          // Map amounts to periods, ensuring all duration periods are included
+          return Array(duration).fill().map((_, idx) => {
+            const amount = amounts[idx] || "0";
+            const period = `${unit} ${idx + 1}`;
+            console.log("Generated Period:", period, "for amount:", amount);
+            return {
+              courseId: fee.courseId,
+              period,
+              amount,
+              total: fee.total || amounts.reduce((sum, amt) => sum + (parseInt(amt) || 0), 0).toString(),
+              feeTags,
+            };
+          });
+        });
+
+      const allFeeTags = Array.from(new Set(feesArray.flatMap(fee => fee.feeTags || [])));
 
       const payload = {
         ...formData,
@@ -458,10 +573,13 @@ const AddCollege = ({ handleClose, editMode }) => {
             courseIds: [],
             supportIds: [],
             fees: [],
+            feeTags: [],
             images: [],
             videos: [],
           });
           handleClose();
+        } else {
+          throw new Error(res?.error || "Failed to add college");
         }
       }
     } catch (e) {
@@ -472,11 +590,12 @@ const AddCollege = ({ handleClose, editMode }) => {
         icon: "error",
         confirmButtonText: "Okay",
       });
+    } finally {
+      setLoader(null);
     }
-    setLoader(null);
   };
 
-  const renderInput = (field, label, required = true) => (
+  const renderInput = (field, label, required = true, type = "text") => (
     <div className="relative">
       <div className="flex gap-4 items-center justify-start">
         <label className="block text-gray-700 capitalize mb-2">{label}</label>
@@ -501,7 +620,7 @@ const AddCollege = ({ handleClose, editMode }) => {
         />
       ) : (
         <input
-          type="text"
+          type={type}
           name={field}
           value={formData[field]}
           onChange={handleChange}
@@ -592,10 +711,10 @@ const AddCollege = ({ handleClose, editMode }) => {
       <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
         {renderInput("name", "Name")}
         {renderInput("university", "University")}
-        {renderInput("mobile", "Mobile")}
-        {renderInput("campus_Highlight", "Campus Highlight")}
-        {renderInput("path", "How to Reach?")}
-        {renderInput("rank", "Rank")}
+        {renderInput("mobile", "Mobile", false)}
+        {renderInput("campus_Highlight", "Campus Highlight", false)}
+        {renderInput("path", "How to Reach?", false)}
+        {renderInput("rank", "Rank", false, "number")}
 
         <div className="relative">
           <label className="block text-gray-700 capitalize mb-2">
@@ -606,7 +725,6 @@ const AddCollege = ({ handleClose, editMode }) => {
             value={formData.category}
             onChange={handleChange}
             className="w-full p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           >
             <option value="">Select Category</option>
             {categories.map((cat) => (
@@ -656,10 +774,10 @@ const AddCollege = ({ handleClose, editMode }) => {
               Description
             </label>
             <button
-              disabled={loader}
               type="button"
+              disabled={loader}
               onClick={generateDescription}
-              className="mb-2 px-4 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md"
+              className="mb-2 px-4 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md disabled:opacity-50"
             >
               {loader ? "Generating..." : "Generate Description"}
             </button>
@@ -716,7 +834,6 @@ const AddCollege = ({ handleClose, editMode }) => {
                       value={formData.supportIds[index] || ""}
                       onChange={handleChange}
                       className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
                     >
                       <option value="">Select support staff</option>
                       {support.map((staff) => (
@@ -768,7 +885,7 @@ const AddCollege = ({ handleClose, editMode }) => {
                         variant="outlined"
                         size="small"
                         fullWidth
-                        inputProps={{ min: 1, max: courseDurations[courseId] || 3 }}
+                        inputProps={{ min: 1, step: 1 }}
                         required
                         className="mt-2"
                       />
@@ -779,8 +896,7 @@ const AddCollege = ({ handleClose, editMode }) => {
                         <div className="mt-2 space-y-2">
                           {Array.from(
                             {
-                              length:
-                                Math.min(parseInt(formData.fees[index]?.duration) || 0, courseDurations[courseId] || 3),
+                              length: parseInt(formData.fees[index]?.duration) || 1,
                             },
                             (_, i) => (
                               <TextField
@@ -795,7 +911,7 @@ const AddCollege = ({ handleClose, editMode }) => {
                                 variant="outlined"
                                 size="small"
                                 fullWidth
-                                inputProps={{ min: 0 }}
+                                inputProps={{ min: 0, step: 1 }}
                                 required
                               />
                             )
@@ -809,7 +925,8 @@ const AddCollege = ({ handleClose, editMode }) => {
                             variant="outlined"
                             size="small"
                             fullWidth
-                            inputProps={{ min: 0 }}
+                            inputProps={{ min: 0, step: 1 }}
+                            required
                             className="mt-2"
                           />
                         </div>
@@ -825,7 +942,7 @@ const AddCollege = ({ handleClose, editMode }) => {
                           variant="outlined"
                           size="small"
                           fullWidth
-                          inputProps={{ min: 0 }}
+                          inputProps={{ min: 0, step: 1 }}
                           required
                         />
                         <TextField
@@ -837,7 +954,8 @@ const AddCollege = ({ handleClose, editMode }) => {
                           variant="outlined"
                           size="small"
                           fullWidth
-                          inputProps={{ min: 0 }}
+                          inputProps={{ min: 0, step: 1 }}
+                          required
                           className="mt-2"
                         />
                       </div>
