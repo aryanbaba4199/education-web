@@ -19,25 +19,23 @@ import {
   Alert,
   Button,
   Box,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  TextField,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateRangePicker } from "@mui/x-date-pickers-pro/DateRangePicker";
 import { Link, useNavigate } from "react-router-dom";
-
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(2);
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
+  const [dateRange, setDateRange] = useState([null, null]); // [startDate, endDate]
   const [users, setUsers] = useState([]);
   const [forthedate, setForTheDate] = useState(null);
   const [employees, setEmployees] = useState([]);
@@ -45,7 +43,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const getDashboard = async () => {
-    
     try {
       setLoading(true);
       setError(null);
@@ -81,13 +78,13 @@ const Dashboard = () => {
     }
   };
 
-  const getDateData = async (fromDate, toDate) => {
+  const getDateData = async (startDate, endDate) => {
     try {
       setLoading(true);
       setError(null);
       const res = await posterFunction(bncApi.getStatement, {
-        fromDate: fromDate.format("YYYY-MM-DD"),
-        toDate: toDate.format("YYYY-MM-DD"),
+        fromDate: startDate.format("YYYY-MM-DD"),
+        toDate: endDate.format("YYYY-MM-DD"),
       });
       if (res.success) {
         setDashboardData(res.data.data);
@@ -106,11 +103,11 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      setSelectedEmployeeId(""); // Reset selected employee
-      setDashboardData(null); // Clear dashboard data
+      setSelectedEmployeeId("");
+      setDashboardData(null);
       const res = await getterFunction(bncApi.getUsers);
       if (res.success) {
-        setEmployees(res.data || []); // Assuming res.data.data is an array of employees
+        setEmployees(res.data || []);
       } else {
         setError("Failed to fetch employees");
       }
@@ -152,17 +149,18 @@ const Dashboard = () => {
   const handleClick = (item) => {
     setActiveTab(item.value);
     if (item.value === 1) {
-      setEmployees([]); // Clear employee list
-      setSelectedEmployeeId(""); // Clear selected employee
+      setEmployees([]);
+      setSelectedEmployeeId("");
       getDashboard();
     } else if (item.value === 2) {
-      setEmployees([]); // Clear employee list
-      setSelectedEmployeeId(""); // Clear selected employee
+      setEmployees([]);
+      setSelectedEmployeeId("");
       getTodaysData();
     } else if (item.value === 3) {
-      setEmployees([]); // Clear employee list
-      setSelectedEmployeeId(""); // Clear selected employee
-      setDashboardData(null); // Clear dashboard data
+      setEmployees([]);
+      setSelectedEmployeeId("");
+      setDashboardData(null);
+      setDateRange([null, null]); // Reset date range
     } else if (item.value === 4) {
       getUsers();
     }
@@ -172,7 +170,6 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const date = forthedate.format("YYYY-MM-DD");
-
       const res = await posterFunction(bncApi.getuserDateDashboard, {
         date,
         id: selectedEmployeeId,
@@ -193,19 +190,20 @@ const Dashboard = () => {
     if (employeeId) {
       getEmployeeData(employeeId);
     } else {
-      setDashboardData(null); // Clear dashboard data if no employee is selected
+      setDashboardData(null);
     }
   };
 
   const handleDateSubmit = () => {
-    if (fromDate && toDate) {
-      if (toDate.isBefore(fromDate)) {
-        setError("To date cannot be before from date");
+    const [startDate, endDate] = dateRange;
+    if (startDate && endDate) {
+      if (endDate.isBefore(startDate)) {
+        setError("End date cannot be before start date");
         return;
       }
-      getDateData(fromDate, toDate);
+      getDateData(startDate, endDate);
     } else {
-      setError("Please select both from and to dates");
+      setError("Please select a date range");
     }
   };
 
@@ -227,49 +225,29 @@ const Dashboard = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-        bgcolor="#f5f5f5"
-        p={3}
-      >
-        <Alert
-          severity="error"
-          action={
-            <Button
-              color="inherit"
-              size="small"
-              onClick={() => handleClick({ value: activeTab })}
-            >
-              Retry
-            </Button>
-          }
-        >
-          {error}
-        </Alert>
-      </Box>
-    );
-  }
-  const handleCardClick = (num)=>{
-    console.log(activeTab)
-    if(activeTab==1){
-      navigate(`/admin/bnc/calls?tabIndex=${num}`)
+  const handleCardClick = (num) => {
+    if (activeTab === 1) {
+      navigate(`/admin/bnc/calls?tabIndex=${num}`);
     }
-    if(activeTab==2){
-      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=today`)
+    if (activeTab === 2) {
+      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=today`);
     }
-    if(activeTab==3){
-      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=statement&fromDate=${fromDate}&toDate=${toDate}`)
+    if (activeTab === 3) {
+      const [startDate, endDate] = dateRange;
+      if (!startDate || !endDate) {
+        setError("Please select a date range");
+        return;
+      }
+      navigate(
+        `/admin/bnc/calls?tabIndex=${num}&tabType=statement&fromDate=${startDate.format(
+          "YYYY-MM-DD"
+        )}&toDate=${endDate.format("YYYY-MM-DD")}`
+      );
     }
-    if(activeTab==4){
-      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=employee`)
+    if (activeTab === 4) {
+      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=employee`);
     }
-    
-  }
+  };
 
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
@@ -306,362 +284,391 @@ const Dashboard = () => {
             </button>
           ))}
         </div>
-
-        {activeTab === 3 && (
-          <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
-                <DatePicker
-                  label="From Date"
-                  value={fromDate}
-                  onChange={(newValue) => setFromDate(newValue)}
-                  renderInput={(params) => <TextField {...params} />}
-                />
-                <DatePicker
-                  label="To Date"
-                  value={toDate}
-                  onChange={(newValue) => setToDate(newValue)}
-                  renderInput={(params) => <TextField {...params} />}
-                />
+        {error ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight="100vh"
+            bgcolor="#f5f5f5"
+            p={3}
+          >
+            <Alert
+              severity="error"
+              action={
                 <Button
-                  variant="contained"
-                  onClick={handleDateSubmit}
-                  disabled={!fromDate || !toDate}
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    if (activeTab === 3) {
+                      setError(null);
+                      return;
+                    }
+                    window.location.reload();
+                  }}
                 >
-                  Fetch Data
+                  Retry
                 </Button>
-              </Box>
-            </LocalizationProvider>
+              }
+            >
+              {error}
+            </Alert>
           </Box>
-        )}
-
-        {activeTab === 4 && employees.length > 0 && (
-          <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
-            <Typography variant="h6" className="font-bold text-gray-800 mb-4">
-              Select Employee
-            </Typography>
-            <div className="flex md:flex-row flex-col justify-between items-center md:px-8 px-2">
-              <FormControl fullWidth sx={{ maxWidth: 300 }}>
-                <InputLabel id="employee-select-label">Employee</InputLabel>
-                <Select
-                  labelId="employee-select-label"
-                  value={selectedEmployeeId}
-                  label="Employee"
-                  onChange={handleEmployeeSelect}
-                >
-                  <MenuItem value="">
-                    <em>Select an employee</em>
-                  </MenuItem>
-                  {employees.map((employee) => (
-                    <MenuItem key={employee._id} value={employee._id}>
-                      {employee.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <div className="gap-2">
+        ) : (
+          <>
+            {activeTab === 3 && (
+              <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    label="Date"
-                    value={forthedate}
-                    onChange={(newValue) => setForTheDate(newValue)}
-                    renderInput={(params) => <TextField {...params} />}
-                  />
+                  <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+                    <DateRangePicker
+                      value={dateRange}
+                      onChange={(newValue) => setDateRange(newValue)}
+                      renderInput={(startProps, endProps) => (
+                        <>
+                          <TextField {...startProps} label="Start Date" />
+                          <Box sx={{ mx: 2 }}> to </Box>
+                          <TextField {...endProps} label="End Date" />
+                        </>
+                      )}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleDateSubmit}
+                      disabled={!dateRange[0] || !dateRange[1]}
+                    >
+                      Fetch Data
+                    </Button>
+                  </Box>
                 </LocalizationProvider>
-                <div className="m-2">
-                  <Button variant="outlined" onClick={handleEmployeeDateChange}>
-                    Fetch Data
-                  </Button>
+              </Box>
+            )}
+
+            {activeTab === 4 && employees.length > 0 && (
+              <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
+                <Typography variant="h6" className="font-bold text-gray-800 mb-4">
+                  Select Employee
+                </Typography>
+                <div className="flex md:flex-row flex-col justify-between items-center md:px-8 px-2">
+                  <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                    <InputLabel id="employee-select-label">Employee</InputLabel>
+                    <Select
+                      labelId="employee-select-label"
+                      value={selectedEmployeeId}
+                      label="Employee"
+                      onChange={handleEmployeeSelect}
+                    >
+                      <MenuItem value="">
+                        <em>Select an employee</em>
+                      </MenuItem>
+                      {employees.map((employee) => (
+                        <MenuItem key={employee._id} value={employee._id}>
+                          {employee.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <div className="gap-2">
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DateRangePicker
+                        label="Date"
+                        value={forthedate}
+                        onChange={(newValue) => setForTheDate(newValue)}
+                        renderInput={(params) => <TextField {...params} />}
+                      />
+                    </LocalizationProvider>
+                    <div className="m-2">
+                      <Button variant="outlined" onClick={handleEmployeeDateChange}>
+                        Fetch Data
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Box>
-        )}
+              </Box>
+            )}
 
-        {(activeTab !== 4 || selectedEmployeeId || employees.length === 0) && (
-          <div className="flex flex-wrap md:flex-row flex-col gap-4">
-            {/* Total Users */}
-            {activeTab === 1 && (
-              <Grid item xs={12} sm={6} md={4} lg={3}>
-                <span
-                  className="hover:cursor-pointer"
-                  onClick={() => setActiveTab(4)}
-                >
-                  {" "}
-                  <Card
-                    className="bg-white w-full rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                    sx={{ display: "flex", alignItems: "center", p: 2 }}
-                  >
-                    <Box className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                      <FaUsers size={24} />
-                    </Box>
-
-                    <CardContent className="p-0">
-                      <Typography variant="body2" color="textSecondary">
-                        Total Users
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        className="font-bold text-gray-800"
+            {(activeTab !== 4 || selectedEmployeeId || employees.length === 0) && (
+              <div className="flex flex-wrap md:flex-row flex-col gap-4">
+                {/* Total Users */}
+                {activeTab === 1 && (
+                  <Grid item xs={12} sm={6} md={4} lg={3}>
+                    <span
+                      className="hover:cursor-pointer"
+                      onClick={() => setActiveTab(4)}
+                    >
+                      <Card
+                        className="bg-white w-full rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                        sx={{ display: "flex", alignItems: "center", p: 2 }}
                       >
-                        {dashboardData?.totalUsers || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </span>
-              </Grid>
-            )}
+                        <Box className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                          <FaUsers size={24} />
+                        </Box>
+                        <CardContent className="p-0">
+                          <Typography variant="body2" color="textSecondary">
+                            Total Users
+                          </Typography>
+                          <Typography
+                            variant="h5"
+                            className="font-bold text-gray-800"
+                          >
+                            {dashboardData?.totalUsers || 0}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </span>
+                  </Grid>
+                )}
 
-            {/* Total Admissions */}
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span
-                className="hover:cursor-pointer"
-                onClick={() => handleCardClick(5)}
-              >
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
-                >
-                  <Box className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                    <FaUserGraduate size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Total Admissions
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
+                {/* Total Admissions */}
+                <Grid item xs={12} sm={6} md={4} lg={3}>
+                  <span
+                    className="hover:cursor-pointer"
+                    onClick={() => handleCardClick(5)}
+                  >
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ display: "flex", alignItems: "center", p: 2 }}
                     >
-                      {dashboardData?.totalAdmissions ?? 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </span>
-            </Grid>
-
-            {/* Total Calls */}
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span
-                className="hover:cursor-pointer"
-                onClick={() => handleCardClick(0)}
-              >
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
-                >
-                  <Box className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
-                    <FaPhone size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      {activeTab === 2
-                        ? "Today's"
-                        : activeTab === 3
-                        ? "Selected Period"
-                        : activeTab === 4
-                        ? "Employee"
-                        : "Total"}{" "}
-                      Calls
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
-                    >
-                      {dashboardData?.totalCalls || 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </span>
-            </Grid>
-
-            
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span
-                className="hover:cursor-pointer"
-                onClick={() => handleCardClick(6)}
-              >
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
-                >
-                  <Box className="p-3 rounded-full bg-red-100 text-red-600 mr-4">
-                    <FaClock size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Missed Follow-ups
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
-                    >
-                      {dashboardData?.expiredFollowups || 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </span>
-            </Grid>
-
-            {/* Interested */}
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span
-                className="hover:cursor-pointer"
-                onClick={() => handleCardClick(1)}
-              >
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
-                >
-                  <Box className="p-3 rounded-full bg-teal-100 text-teal-600 mr-4">
-                    <FaThumbsUp size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Interested
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
-                    >
-                      {dashboardData?.intrested || 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </span>
-            </Grid>
-
-            {/* Not Interested */}
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span
-                className="hover:cursor-pointer"
-                onClick={() => handleCardClick(2)}
-              >
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
-                >
-                  <Box className="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
-                    <FaThumbsDown size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Not Interested
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
-                    >
-                      {dashboardData?.notIntrested || 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </span>
-            </Grid>
-
-            {/* Not Connected */}
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span
-                className="hover:cursor-pointer"
-                onClick={() => handleCardClick(3)}
-              >
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
-                >
-                  <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                    <FaPhoneSlash size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Not Connected
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
-                    >
-                      {dashboardData?.notConnected || 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </span>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span
-                className="hover:cursor-pointer"
-                onClick={() => handleCardClick(4)}
-              >
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
-                >
-                  <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                    <FaPhoneSlash size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Invalid Numbers
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
-                    >
-                      {dashboardData?.invalid || 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </span>
-            </Grid>
-
-            {/* Best/Worst User */}
-            {activeTab === 1 && (
-              <Grid item xs={12} sm={6} md={4} lg={3}>
-                <Card
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ p: 2 }}
-                >
-                  <CardContent className="p-0">
-                    <Box display="flex" alignItems="center" mb={2}>
-                      <Box className="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
-                        <FaStar size={24} />
+                      <Box className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <FaUserGraduate size={24} />
                       </Box>
-                      <Box>
+                      <CardContent className="p-0">
                         <Typography variant="body2" color="textSecondary">
-                          Best Employee
+                          Total Admissions
                         </Typography>
                         <Typography
-                          variant="h6"
-                          className="font-semibold text-gray-800"
+                          variant="h5"
+                          className="font-bold text-gray-800"
                         >
-                          {dashboardData?.eod
-                            ? dashboardData?.eod.name
-                            : "None"}
+                          {dashboardData?.totalAdmissions ?? 0}
                         </Typography>
+                      </CardContent>
+                    </Card>
+                  </span>
+                </Grid>
+
+                {/* Total Calls */}
+                <Grid item xs={12} sm={6} md={4} lg={3}>
+                  <span
+                    className="hover:cursor-pointer"
+                    onClick={() => handleCardClick(0)}
+                  >
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ display: "flex", alignItems: "center", p: 2 }}
+                    >
+                      <Box className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                        <FaPhone size={24} />
                       </Box>
-                    </Box>
-                    <Box display="flex" alignItems="center">
-                      <Box className="p-3 rounded-full bg-gray-100 text-gray-600 mr-4">
-                        <FaStar size={24} />
-                      </Box>
-                      <Box>
+                      <CardContent className="p-0">
                         <Typography variant="body2" color="textSecondary">
-                          Worst Employee
+                          {activeTab === 2
+                            ? "Today's"
+                            : activeTab === 3
+                            ? "Selected Period"
+                            : activeTab === 4
+                            ? "Employee"
+                            : "Total"}{" "}
+                          Calls
                         </Typography>
                         <Typography
-                          variant="h6"
-                          className="font-semibold text-gray-800"
+                          variant="h5"
+                          className="font-bold text-gray-800"
                         >
-                          {dashboardData?.weod
-                            ? dashboardData.weod.name
-                            : "None"}
+                          {dashboardData?.totalCalls || 0}
                         </Typography>
+                      </CardContent>
+                    </Card>
+                  </span>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={4} lg={3}>
+                  <span
+                    className="hover:cursor-pointer"
+                    onClick={() => handleCardClick(6)}
+                  >
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ display: "flex", alignItems: "center", p: 2 }}
+                    >
+                      <Box className="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                        <FaClock size={24} />
                       </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
+                      <CardContent className="p-0">
+                        <Typography variant="body2" color="textSecondary">
+                          Missed Follow-ups
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          className="font-bold text-gray-800"
+                        >
+                          {dashboardData?.expiredFollowups || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </span>
+                </Grid>
+
+                {/* Interested */}
+                <Grid item xs={12} sm={6} md={4} lg={3}>
+                  <span
+                    className="hover:cursor-pointer"
+                    onClick={() => handleCardClick(1)}
+                  >
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ display: "flex", alignItems: "center", p: 2 }}
+                    >
+                      <Box className="p-3 rounded-full bg-teal-100 text-teal-600 mr-4">
+                        <FaThumbsUp size={24} />
+                      </Box>
+                      <CardContent className="p-0">
+                        <Typography variant="body2" color="textSecondary">
+                          Interested
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          className="font-bold text-gray-800"
+                        >
+                          {dashboardData?.intrested || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </span>
+                </Grid>
+
+                {/* Not Interested */}
+                <Grid item xs={12} sm={6} md={4} lg={3}>
+                  <span
+                    className="hover:cursor-pointer"
+                    onClick={() => handleCardClick(2)}
+                  >
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ display: "flex", alignItems: "center", p: 2 }}
+                    >
+                      <Box className="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
+                        <FaThumbsDown size={24} />
+                      </Box>
+                      <CardContent className="p-0">
+                        <Typography variant="body2" color="textSecondary">
+                          Not Interested
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          className="font-bold text-gray-800"
+                        >
+                          {dashboardData?.notIntrested || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </span>
+                </Grid>
+
+                {/* Not Connected */}
+                <Grid item xs={12} sm={6} md={4} lg={3}>
+                  <span
+                    className="hover:cursor-pointer"
+                    onClick={() => handleCardClick(3)}
+                  >
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ display: "flex", alignItems: "center", p: 2 }}
+                    >
+                      <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                        <FaPhoneSlash size={24} />
+                      </Box>
+                      <CardContent className="p-0">
+                        <Typography variant="body2" color="textSecondary">
+                          Not Connected
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          className="font-bold text-gray-800"
+                        >
+                          {dashboardData?.notConnected || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </span>
+                </Grid>
+                <Grid item xs={12} sm={6} md={4} lg={3}>
+                  <span
+                    className="hover:cursor-pointer"
+                    onClick={() => handleCardClick(4)}
+                  >
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ display: "flex", alignItems: "center", p: 2 }}
+                    >
+                      <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                        <FaPhoneSlash size={24} />
+                      </Box>
+                      <CardContent className="p-0">
+                        <Typography variant="body2" color="textSecondary">
+                          Invalid Numbers
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          className="font-bold text-gray-800"
+                        >
+                          {dashboardData?.invalid || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </span>
+                </Grid>
+
+                {/* Best/Worst User */}
+                {activeTab === 1 && (
+                  <Grid item xs={12} sm={6} md={4} lg={3}>
+                    <Card
+                      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      sx={{ p: 2 }}
+                    >
+                      <CardContent className="p-0">
+                        <Box display="flex" alignItems="center" mb={2}>
+                          <Box className="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
+                            <FaStar size={24} />
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" color="textSecondary">
+                              Best Employee
+                            </Typography>
+                            <Typography
+                              variant="h6"
+                              className="font-semibold text-gray-800"
+                            >
+                              {dashboardData?.eod
+                                ? dashboardData?.eod.name
+                                : "None"}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box display="flex" alignItems="center">
+                          <Box className="p-3 rounded-full bg-gray-100 text-gray-600 mr-4">
+                            <FaStar size={24} />
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" color="textSecondary">
+                              Worst Employee
+                            </Typography>
+                            <Typography
+                              variant="h6"
+                              className="font-semibold text-gray-800"
+                            >
+                              {dashboardData?.weod
+                                ? dashboardData.weod.name
+                                : "None"}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </Box>
     </Box>
