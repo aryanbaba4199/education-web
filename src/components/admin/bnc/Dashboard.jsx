@@ -45,6 +45,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const getDashboard = async () => {
+    
     try {
       setLoading(true);
       setError(null);
@@ -209,7 +210,7 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    getDashboard();
+    getTodaysData();
   }, []);
 
   if (loading) {
@@ -262,7 +263,7 @@ const Dashboard = () => {
       navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=today`)
     }
     if(activeTab==3){
-      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=statement`)
+      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=statement&fromDate=${fromDate}&toDate=${toDate}`)
     }
     if(activeTab==4){
       navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=employee`)
@@ -382,188 +383,233 @@ const Dashboard = () => {
             {/* Total Users */}
             {activeTab === 1 && (
               <Grid item xs={12} sm={6} md={4} lg={3}>
-                <span className="hover:cursor-pointer" onClick={()=>setActiveTab(4)}>              <Card
-                
-                  className="bg-white w-full rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                <span
+                  className="hover:cursor-pointer"
+                  onClick={() => setActiveTab(4)}
                 >
-                  <Box className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                    <FaUsers size={24} />
-                  </Box>
+                  {" "}
+                  <Card
+                    className="bg-white w-full rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                    sx={{ display: "flex", alignItems: "center", p: 2 }}
+                  >
+                    <Box className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                      <FaUsers size={24} />
+                    </Box>
 
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Total Users
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      className="font-bold text-gray-800"
-                    >
-                      {dashboardData?.totalUsers || 0}
-                    </Typography>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-0">
+                      <Typography variant="body2" color="textSecondary">
+                        Total Users
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        className="font-bold text-gray-800"
+                      >
+                        {dashboardData?.totalUsers || 0}
+                      </Typography>
+                    </CardContent>
+                  </Card>
                 </span>
- 
               </Grid>
             )}
 
             {/* Total Admissions */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span className="hover:cursor-pointer" onClick={()=>handleCardClick(5)}>
-              <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              <span
+                className="hover:cursor-pointer"
+                onClick={() => handleCardClick(5)}
               >
-                <Box className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                  <FaUserGraduate size={24} />
-                </Box>
-                <CardContent className="p-0">
-                  <Typography variant="body2" color="textSecondary">
-                    Total Admissions
-                  </Typography>
-                  <Typography variant="h5" className="font-bold text-gray-800">
-                    {dashboardData?.totalAdmissions ?? 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                <Card
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                >
+                  <Box className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                    <FaUserGraduate size={24} />
+                  </Box>
+                  <CardContent className="p-0">
+                    <Typography variant="body2" color="textSecondary">
+                      Total Admissions
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      className="font-bold text-gray-800"
+                    >
+                      {dashboardData?.totalAdmissions ?? 0}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </span>
             </Grid>
 
             {/* Total Calls */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
-              <span className="hover:cursor-pointer" onClick={()=>handleCardClick(0)}>
-              <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              <span
+                className="hover:cursor-pointer"
+                onClick={() => handleCardClick(0)}
               >
-                <Box className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
-                  <FaPhone size={24} />
-                </Box>
-                <CardContent className="p-0">
-                  <Typography variant="body2" color="textSecondary">
-                    {activeTab === 2
-                      ? "Today's"
-                      : activeTab === 3
-                      ? "Selected Period"
-                      : activeTab === 4
-                      ? "Employee"
-                      : "Total"}{" "}
-                    Calls
-                  </Typography>
-                  <Typography variant="h5" className="font-bold text-gray-800">
-                    {dashboardData?.totalCalls || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                <Card
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                >
+                  <Box className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                    <FaPhone size={24} />
+                  </Box>
+                  <CardContent className="p-0">
+                    <Typography variant="body2" color="textSecondary">
+                      {activeTab === 2
+                        ? "Today's"
+                        : activeTab === 3
+                        ? "Selected Period"
+                        : activeTab === 4
+                        ? "Employee"
+                        : "Total"}{" "}
+                      Calls
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      className="font-bold text-gray-800"
+                    >
+                      {dashboardData?.totalCalls || 0}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </span>
             </Grid>
 
-            {/* Expired Follow-ups */}
+            
             <Grid item xs={12} sm={6} md={4} lg={3}>
-            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(6)}>
-              <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              <span
+                className="hover:cursor-pointer"
+                onClick={() => handleCardClick(6)}
               >
-                <Box className="p-3 rounded-full bg-red-100 text-red-600 mr-4">
-                  <FaClock size={24} />
-                </Box>
-                <CardContent className="p-0">
-                  <Typography variant="body2" color="textSecondary">
-                    Missed Follow-ups
-                  </Typography>
-                  <Typography variant="h5" className="font-bold text-gray-800">
-                    {dashboardData?.expiredFollowups || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                <Card
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                >
+                  <Box className="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                    <FaClock size={24} />
+                  </Box>
+                  <CardContent className="p-0">
+                    <Typography variant="body2" color="textSecondary">
+                      Missed Follow-ups
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      className="font-bold text-gray-800"
+                    >
+                      {dashboardData?.expiredFollowups || 0}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </span>
             </Grid>
 
             {/* Interested */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
-            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(1)}>
-              <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              <span
+                className="hover:cursor-pointer"
+                onClick={() => handleCardClick(1)}
               >
-                <Box className="p-3 rounded-full bg-teal-100 text-teal-600 mr-4">
-                  <FaThumbsUp size={24} />
-                </Box>
-                <CardContent className="p-0">
-                  <Typography variant="body2" color="textSecondary">
-                    Interested
-                  </Typography>
-                  <Typography variant="h5" className="font-bold text-gray-800">
-                    {dashboardData?.intrested || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                <Card
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                >
+                  <Box className="p-3 rounded-full bg-teal-100 text-teal-600 mr-4">
+                    <FaThumbsUp size={24} />
+                  </Box>
+                  <CardContent className="p-0">
+                    <Typography variant="body2" color="textSecondary">
+                      Interested
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      className="font-bold text-gray-800"
+                    >
+                      {dashboardData?.intrested || 0}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </span>
             </Grid>
 
             {/* Not Interested */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
-            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(2)}>
-              <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              <span
+                className="hover:cursor-pointer"
+                onClick={() => handleCardClick(2)}
               >
-                <Box className="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
-                  <FaThumbsDown size={24} />
-                </Box>
-                <CardContent className="p-0">
-                  <Typography variant="body2" color="textSecondary">
-                    Not Interested
-                  </Typography>
-                  <Typography variant="h5" className="font-bold text-gray-800">
-                    {dashboardData?.notIntrested || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                <Card
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                >
+                  <Box className="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
+                    <FaThumbsDown size={24} />
+                  </Box>
+                  <CardContent className="p-0">
+                    <Typography variant="body2" color="textSecondary">
+                      Not Interested
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      className="font-bold text-gray-800"
+                    >
+                      {dashboardData?.notIntrested || 0}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </span>
             </Grid>
 
             {/* Not Connected */}
             <Grid item xs={12} sm={6} md={4} lg={3}>
-            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(3)}>
-              <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              <span
+                className="hover:cursor-pointer"
+                onClick={() => handleCardClick(3)}
               >
-                <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                  <FaPhoneSlash size={24} />
-                </Box>
-                <CardContent className="p-0">
-                  <Typography variant="body2" color="textSecondary">
-                    Not Connected
-                  </Typography>
-                  <Typography variant="h5" className="font-bold text-gray-800">
-                    {dashboardData?.notConnected || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                <Card
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                >
+                  <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                    <FaPhoneSlash size={24} />
+                  </Box>
+                  <CardContent className="p-0">
+                    <Typography variant="body2" color="textSecondary">
+                      Not Connected
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      className="font-bold text-gray-800"
+                    >
+                      {dashboardData?.notConnected || 0}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </span>
             </Grid>
             <Grid item xs={12} sm={6} md={4} lg={3}>
-            <span className="hover:cursor-pointer" onClick={()=>handleCardClick(4)}>
-              <Card
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                sx={{ display: "flex", alignItems: "center", p: 2 }}
+              <span
+                className="hover:cursor-pointer"
+                onClick={() => handleCardClick(4)}
               >
-                <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                  <FaPhoneSlash size={24} />
-                </Box>
-                <CardContent className="p-0">
-                  <Typography variant="body2" color="textSecondary">
-                    Invalid Numbers
-                  </Typography>
-                  <Typography variant="h5" className="font-bold text-gray-800">
-                    {dashboardData?.invalid || 0}
-                  </Typography>
-                </CardContent>
-              </Card>
+                <Card
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  sx={{ display: "flex", alignItems: "center", p: 2 }}
+                >
+                  <Box className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                    <FaPhoneSlash size={24} />
+                  </Box>
+                  <CardContent className="p-0">
+                    <Typography variant="body2" color="textSecondary">
+                      Invalid Numbers
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      className="font-bold text-gray-800"
+                    >
+                      {dashboardData?.invalid || 0}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </span>
             </Grid>
 

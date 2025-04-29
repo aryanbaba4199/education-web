@@ -27,13 +27,14 @@ import {
   FaEye,
   FaEdit,
 } from "react-icons/fa";
-import { getterFunction, bncApi } from "../../../../Api";
+import { getterFunction, bncApi, posterFunction } from "../../../../Api";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import BncCallDetails from "../BncCallDetails";
+import { useSearchParams } from "react-router-dom";
 
-const Intrested = ({tabType}) => {
+const Intrested = ({ tabType }) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState(null);
@@ -41,19 +42,31 @@ const Intrested = ({tabType}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const observer = useRef();
-  const limit = 10; // Number of items per page
+  const limit = 10;
+  const [searchParams] = useSearchParams();
+  const fromDate = searchParams.get("fromDate");
+  const toDate = searchParams.get("toDate");
 
-  const getInterested = async (pageNum) => {
+  const getInterested = async (pageNum, tabType) => {
+    console.log("Fetching interested calls...", tabType);
     try {
       setLoading(true);
       setError(null);
-      const res = await getterFunction(
-        `${bncApi.filterCalls}/${1}?page=${pageNum}`
-      );
+      let res;
+      tabType === "statement"
+        ? (res = await posterFunction(bncApi.statementCalls, {
+            page,
+            fromDate: new Date(fromDate),
+            toDate: new Date(toDate),
+            tabId: 1,
+          }))
+        : (res = await getterFunction(
+            `${bncApi.filterCalls}/${1}?page=${pageNum}&tabType=${tabType}`
+          ));
       if (res.success) {
         const newData = res.data.data || [];
         setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
-        setHasMore(newData.length === limit); // Assume there's more if we got a full page
+        setHasMore(newData.length === limit);
       } else {
         setError(res.message || "Failed to fetch data");
       }
@@ -66,8 +79,12 @@ const Intrested = ({tabType}) => {
   };
 
   useEffect(() => {
-    getInterested(1);
-  }, []);
+    if (tabType) {
+      getInterested(1, tabType);
+    } else {
+      getInterested(1);
+    }
+  }, [tabType]);
 
   const lastRowRef = useCallback(
     (node) => {
@@ -152,6 +169,12 @@ const Intrested = ({tabType}) => {
         >
           Interested Calls
         </Typography>
+        <span className="text-lg text-center">
+          {tabType &&
+            `( ${tabType}  ${
+              fromDate && toDate && ` -  From ${fromDate} to ${toDate}`
+            } )`}
+        </span>
 
         <Box className="flex justify-end mb-4 space-x-4">
           <Button
@@ -249,11 +272,11 @@ const Intrested = ({tabType}) => {
                     </Box>
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
-                                      <Box className="flex items-center">
-                                        <FaEdit className="mr-2 text-blue-600" />
-                                        Action
-                                      </Box>
-                                    </TableCell>
+                    <Box className="flex items-center">
+                      <FaEdit className="mr-2 text-blue-600" />
+                      Action
+                    </Box>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -270,8 +293,12 @@ const Intrested = ({tabType}) => {
                     <TableCell>{item.isadmitted ? "Yes" : "No"}</TableCell>
                     <TableCell>{item.intrestLevel ?? "N/A"}</TableCell>
                     <TableCell>{formatDate(item.nextDate)}</TableCell>
-                                        <TableCell onClick={()=>setSelectedId(item._id)} className="hover:cursor-pointer hover:bg-gray-300"><FaEye className="text-green-600"/></TableCell>
-                    
+                    <TableCell
+                      onClick={() => setSelectedId(item._id)}
+                      className="hover:cursor-pointer hover:bg-gray-300"
+                    >
+                      <FaEye className="text-green-600" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -285,9 +312,9 @@ const Intrested = ({tabType}) => {
           </Box>
         )}
       </Box>
-      <Dialog  open={selectedId!==null} onClose={()=>setSelectedId(null)}>
-              <BncCallDetails callId={selectedId} setCallId={setSelectedId}/>
-            </Dialog>
+      <Dialog open={selectedId !== null} onClose={() => setSelectedId(null)}>
+        <BncCallDetails callId={selectedId} setCallId={setSelectedId} />
+      </Dialog>
     </Box>
   );
 };

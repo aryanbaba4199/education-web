@@ -24,7 +24,8 @@ export const bncApi = {
     getUsers : `${bncUrl}/admin/users`,
     createUser : `${bncUrl}/user/signup`,
     filterCalls : `${bncUrl}/admin/filterCalls`,
-    removeInvalid : `${bncUrl}/admin/removeInvalid`
+    removeInvalid : `${bncUrl}/admin/removeInvalid`,
+    statementCalls : `${bncUrl}/admin/statementCalls`,
 }
 
 export const collegeApi  = {

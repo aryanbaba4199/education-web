@@ -28,11 +28,12 @@ import {
   FaEye,
   FaEdit,
 } from "react-icons/fa";
-import { getterFunction, bncApi } from "../../../../Api";
+import { getterFunction, bncApi, posterFunction } from "../../../../Api";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import BncCallDetails from "../BncCallDetails";
+import { useSearchParams } from "react-router-dom";
 
 const Admitted = ({tabType}) => {
   const [data, setData] = useState([]);
@@ -42,17 +43,30 @@ const Admitted = ({tabType}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const observer = useRef();
-  const limit = 10; // Number of items per page
+  const [searchParams] = useSearchParams();
+  const fromDate = searchParams.get("fromDate");
+  const toDate = searchParams.get("toDate");
+
+  
+
 
   const getAdmitted = async (pageNum, tabType) => {
     console.log("Fetching admitted calls...", tabType);
     try {
       setLoading(true);
       setError(null);
-      const uri = tabType ? 
-      `${bncApi.filterCalls}/${5}/${tabType}?page=${pageNum}`
+
+      const uri = tabType==='today' ? 
+      `${bncApi.filterCalls}/${5}?page=${pageNum}&tabType=${tabType}` : 
+       tabType==='statement' ? `${bncApi.statementCalls}`
       : `${bncApi.filterCalls}/${5}?page=${pageNum}`;
-      const res = await getterFunction(uri);
+      let res;
+      
+
+     tabType==='statement' ? res = await posterFunction(uri, {
+      page, fromDate : new Date(fromDate), toDate : new Date(toDate), tabId : 5
+    }) 
+       : res = await  getterFunction(uri);
       if (res.success) {
         const newData = res.data.data || [];
         setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
@@ -164,7 +178,7 @@ const Admitted = ({tabType}) => {
           variant="h4"
           className="font-bold text-gray-800 mb-6 text-center"
         >
-          Admitted Calls
+          Admitted Calls <span className="text-lg">{tabType && `( ${tabType}  ${fromDate && toDate && ` -  From ${fromDate} to ${toDate}`} )`}</span>
         </Typography>
 
         <Box className="flex justify-end mb-4 space-x-4">

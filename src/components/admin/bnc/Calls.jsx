@@ -67,8 +67,9 @@ const Calls = () => {
       setTabTypeforChild(tabType);
     }
     if(tabIndexValue){
-      
-      if(!tabType && tabIndexValue==0){
+      console.log('tabIndexValue', tabIndexValue)
+      if(tabIndexValue==0){
+        console.log('fetching calls')
         fetchCalls(1);
       }
       console.log('setting value', tabIndexValue)
@@ -79,13 +80,16 @@ const Calls = () => {
   }, [tabIndexValue])
 
   const fetchCalls = useCallback(async (pageNum) => {
-    if (loading || !hasNextPage || fetchInProgress.current) return;
-    
+    if (loading || !hasNextPage) {
+      console.log("Fetch already in progress or no more pages to load", loading, hasNextPage, fetchInProgress.current);
+      return;
+    }
+   
     fetchInProgress.current = true;
     setLoading(true);
     
     try {
-      const res = await getterFunction(`${bncApi.calllogs}/${pageNum ?? 1}`);
+      const res = await getterFunction(`${bncApi.calllogs}/${pageNum ?? 1}/?tabType=${tabType}`);
       
       if (res.success) {
         const newCalls = res.data.data;

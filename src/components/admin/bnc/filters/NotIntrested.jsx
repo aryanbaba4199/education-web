@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -13,7 +13,7 @@ import {
   Box,
   Typography,
   Dialog,
-} from '@mui/material';
+} from "@mui/material";
 import {
   FaUser,
   FaPhone,
@@ -26,41 +26,53 @@ import {
   FaServer,
   FaEdit,
   FaEye,
-} from 'react-icons/fa';
-import { getterFunction, bncApi } from '../../../../Api';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import BncCallDetails from '../BncCallDetails';
+} from "react-icons/fa";
+import { getterFunction, bncApi, posterFunction } from "../../../../Api";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import BncCallDetails from "../BncCallDetails";
+import { useSearchParams } from "react-router-dom";
 
-const NotIntrested = ({tabType}) => {
+const NotIntrested = ({ tabType }) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
-    const [selectedId, setSelectedId] =useState(null)
-  
+  const [selectedId, setSelectedId] = useState(null);
+
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const observer = useRef();
   const limit = 10; // Number of items per page
+  const [searchParams] = useSearchParams();
+  const fromDate = searchParams.get("fromDate");
+  const toDate = searchParams.get("toDate");
 
   const getInterested = async (pageNum) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await getterFunction(
-        `${bncApi.filterCalls}/${2}?page=${pageNum}`
-      );
+      let res;
+      tabType === "statement"
+        ? (res = await posterFunction(bncApi.statementCalls, {
+            page,
+            fromDate: new Date(fromDate),
+            toDate: new Date(toDate),
+            tabId: 2,
+          }))
+        : (res = await getterFunction(
+            `${bncApi.filterCalls}/${2}?page=${pageNum}&tabType=${tabType}`
+          ));
       if (res.success) {
         const newData = res.data.data || [];
         setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
         setHasMore(newData.length === limit); // Assume there's more if we got a full page
       } else {
-        setError(res.message || 'Failed to fetch data');
+        setError(res.message || "Failed to fetch data");
       }
     } catch (e) {
-      console.error('Error fetching interested calls:', e);
-      setError('An error occurred while fetching data');
+      console.error("Error fetching interested calls:", e);
+      setError("An error occurred while fetching data");
     } finally {
       setLoading(false);
     }
@@ -91,11 +103,11 @@ const NotIntrested = ({tabType}) => {
   }, [page]);
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -103,36 +115,45 @@ const NotIntrested = ({tabType}) => {
     const worksheetData = data.map((item) => ({
       Name: item.name,
       Mobile: item.mobile,
-      'Updated At': formatDate(item.updatedAt),
-      Admitted: item.isadmitted ? 'Yes' : 'No',
-      'Interest Level': item.intrestLevel ?? 'N/A',
-      'Next Date': formatDate(item.nextDate),
+      "Updated At": formatDate(item.updatedAt),
+      Admitted: item.isadmitted ? "Yes" : "No",
+      "Interest Level": item.intrestLevel ?? "N/A",
+      "Next Date": formatDate(item.nextDate),
     }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Interested');
-    XLSX.writeFile(workbook, 'interested_calls.xlsx');
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Interested");
+    XLSX.writeFile(workbook, "interested_calls.xlsx");
   };
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    doc.text('Interested Calls', 14, 20);
+    doc.text("Interested Calls", 14, 20);
     doc.autoTable({
       startY: 30,
-      head: [['Name', 'Mobile', 'Updated At', 'Admitted', 'Interest Level', 'Next Date']],
+      head: [
+        [
+          "Name",
+          "Mobile",
+          "Updated At",
+          "Admitted",
+          "Interest Level",
+          "Next Date",
+        ],
+      ],
       body: data.map((item) => [
         item.name,
         item.mobile,
         formatDate(item.updatedAt),
-        item.isadmitted ? 'Yes' : 'No',
-        item.intrestLevel ?? 'N/A',
+        item.isadmitted ? "Yes" : "No",
+        item.intrestLevel ?? "N/A",
         formatDate(item.nextDate),
       ]),
-      theme: 'striped',
+      theme: "striped",
       styles: { fontSize: 10 },
       headStyles: { fillColor: [66, 165, 245] },
     });
-    doc.save('interested_calls.pdf');
+    doc.save("interested_calls.pdf");
   };
 
   return (
@@ -198,7 +219,7 @@ const NotIntrested = ({tabType}) => {
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                <TableCell className="bg-blue-100 font-semibold">
+                  <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaServer className="mr-2 text-blue-600" />
                       SN
@@ -222,20 +243,19 @@ const NotIntrested = ({tabType}) => {
                       Updated At
                     </Box>
                   </TableCell>
-                  
-                  
+
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaCalendar className="mr-2 text-blue-600" />
                       Feedback
                     </Box>
                   </TableCell>
-                   <TableCell className="bg-blue-100 font-semibold">
-                                      <Box className="flex items-center">
-                                        <FaEdit className="mr-2 text-blue-600" />
-                                        Action
-                                      </Box>
-                                    </TableCell>
+                  <TableCell className="bg-blue-100 font-semibold">
+                    <Box className="flex items-center">
+                      <FaEdit className="mr-2 text-blue-600" />
+                      Action
+                    </Box>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -245,13 +265,17 @@ const NotIntrested = ({tabType}) => {
                     ref={index === data.length - 1 ? lastRowRef : null}
                     className="hover:bg-gray-50"
                   >
-                       <TableCell>{index+1}</TableCell>
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.mobile}</TableCell>
                     <TableCell>{formatDate(item.updatedAt)}</TableCell>
                     <TableCell>{item.feedback}</TableCell>
-                                      <TableCell onClick={()=>setSelectedId(item._id)} className="hover:cursor-pointer hover:bg-gray-300"><FaEye className="text-green-600"/></TableCell>
-                  
+                    <TableCell
+                      onClick={() => setSelectedId(item._id)}
+                      className="hover:cursor-pointer hover:bg-gray-300"
+                    >
+                      <FaEye className="text-green-600" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -265,9 +289,9 @@ const NotIntrested = ({tabType}) => {
           </Box>
         )}
       </Box>
-      <Dialog  open={selectedId!==null} onClose={()=>setSelectedId(null)}>
-              <BncCallDetails callId={selectedId} setCallId={setSelectedId}/>
-            </Dialog>
+      <Dialog open={selectedId !== null} onClose={() => setSelectedId(null)}>
+        <BncCallDetails callId={selectedId} setCallId={setSelectedId} />
+      </Dialog>
     </Box>
   );
 };
