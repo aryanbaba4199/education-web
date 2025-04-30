@@ -26,6 +26,7 @@ export const bncApi = {
     filterCalls : `${bncUrl}/admin/filterCalls`,
     removeInvalid : `${bncUrl}/admin/removeInvalid`,
     statementCalls : `${bncUrl}/admin/statementCalls`,
+    empStatementCalls : `${bncUrl}/admin/empStatementCalls`,
 }
 
 export const collegeApi  = {

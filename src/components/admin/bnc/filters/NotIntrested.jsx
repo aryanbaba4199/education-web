@@ -43,7 +43,7 @@ const NotIntrested = ({ tabType }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const observer = useRef();
-  const limit = 10; // Number of items per page
+  
   const [searchParams] = useSearchParams();
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
@@ -66,7 +66,7 @@ const NotIntrested = ({ tabType }) => {
       if (res.success) {
         const newData = res.data.data || [];
         setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
-        setHasMore(newData.length === limit); // Assume there's more if we got a full page
+        setHasMore(res.data.hasNext); // Assume there's more if we got a full page
       } else {
         setError(res.message || "Failed to fetch data");
       }

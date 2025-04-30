@@ -46,6 +46,7 @@ const Intrested = ({ tabType }) => {
   const [searchParams] = useSearchParams();
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
+  const employeeId = searchParams.get("employeeId");
 
   const getInterested = async (pageNum, tabType) => {
     console.log("Fetching interested calls...", tabType);
@@ -60,13 +61,22 @@ const Intrested = ({ tabType }) => {
             toDate: new Date(toDate),
             tabId: 1,
           }))
-        : (res = await getterFunction(
+        : tabType==='employee' ? (
+          res = await posterFunction(bncApi.empStatementCalls, {
+            page,
+            fromDate: new Date(fromDate),
+            toDate: new Date(toDate),
+            tabId: 1,
+            employeeId 
+          })
+        ) : 
+        (res = await getterFunction(
             `${bncApi.filterCalls}/${1}?page=${pageNum}&tabType=${tabType}`
           ));
       if (res.success) {
         const newData = res.data.data || [];
         setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
-        setHasMore(newData.length === limit);
+        setHasMore(res.data.hasNext);
       } else {
         setError(res.message || "Failed to fetch data");
       }

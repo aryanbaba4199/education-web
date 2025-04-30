@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { bncApi, getterFunction } from "../../../Api";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { bncApi, getterFunction, posterFunction } from "../../../Api";
 import { FaSearch, FaDownload, FaEye } from "react-icons/fa";
 import {
   Table,
@@ -22,6 +22,13 @@ import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { DateRange } from "react-date-range";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
+import debounce from "lodash.debounce";
+import { useInView } from "react-intersection-observer";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 import BncCallDetails from "./BncCallDetails";
 import Intrested from "./filters/Intrested";
 import NotIntrested from "./filters/NotIntrested";
@@ -29,7 +36,9 @@ import NotConnected from "./filters/NotConnected";
 import InvalidNumber from "./filters/InvalidNumber";
 import Admitted from "./filters/Admitted";
 import Missed from "./filters/Missed";
-import { useSearchParams } from "react-router-dom";
+
+// Note: Requires date-fns v2.x for react-date-range
+// npm install react-intersection-observer react-date-range date-fns@2.30.0 @types/react-date-range lodash.debounce
 
 const Calls = () => {
   const [calls, setCalls] = useState([]);
@@ -42,113 +51,223 @@ const Calls = () => {
   const [selectedCall, setSelectedCall] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
-  const [tabTypeforChild, setTabTypeforChild] = useState(null);
-  const observer = useRef();
-  const fetchInProgress = useRef(false);
-  const lastCallElementRef = useRef();
+  const [tabTypeforChild, setTabTypeforChild] = useState(""); // Initialize to avoid null
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: null,
+      endDate: null,
+      key: "selection",
+    },
+  ]);
   const [searchParams] = useSearchParams();
-  const tabIndexValue = searchParams.get('tabIndex');
-  const tabType = searchParams.get('tabType');
-  
+  const navigate = useNavigate();
+  const { ref: lastCallRef, inView } = useInView({ threshold: 0.1 });
 
-  const filterButtons = useMemo(() => [
-    { title: "All", value: 0, color: "green" },
-    { title: "Interested", value: 1, color: "green" },
-    { title: "Not Interested", value: 2, color: "red" },
-    { title: "Not Connected", value: 3, color: "yellow" },
-    { title: "Invalid Number", value: 4, color: "red" },
-    { title: "Admitted", value: 5, color: "green" },
-    { title: "Missed Follow up", value: 6, color: "red" },
-  ], []);
+  const tabIndexValue = searchParams.get("tabIndex");
+  const tabType = searchParams.get("tabType") || "";
+  const fromDate = searchParams.get("fromDate");
+  const toDate = searchParams.get("toDate");
+  const employeeId = searchParams.get("employeeId");
 
-  useEffect(()=>{
-    console.log('tab is', tabType)
-    if(tabType){
-      setTabTypeforChild(tabType);
+  const filterButtons = useMemo(
+    () => [
+      { title: "All", value: 0, color: "green" },
+      { title: "Interested", value: 1, color: "green" },
+      { title: "Not Interested", value: 2, color: "red" },
+      { title: "Not Connected", value: 3, color: "yellow" },
+      { title: "Invalid Number", value: 4, color: "red" },
+      { title: "Admitted", value: 5, color: "green" },
+      { title: "Missed Follow up", value: 6, color: "red" },
+    ],
+    []
+  );
+
+  // Initialize date range from URL parameters
+  useEffect(() => {
+    if (fromDate && toDate && tabType === "employee") {
+      setDateRange([
+        {
+          startDate: dayjs(fromDate).toDate(),
+          endDate: dayjs(toDate).toDate(),
+          key: "selection",
+        },
+      ]);
     }
-    if(tabIndexValue){
-      console.log('tabIndexValue', tabIndexValue)
-      if(tabIndexValue==0){
-        console.log('fetching calls')
-        fetchCalls(1);
-      }
-      console.log('setting value', tabIndexValue)
-      setActiveFilter(Number(tabIndexValue));
-    }
-    
-    
-  }, [tabIndexValue])
+  }, [fromDate, toDate, tabType]);
 
-  const fetchCalls = useCallback(async (pageNum) => {
-    if (loading || !hasNextPage) {
-      console.log("Fetch already in progress or no more pages to load", loading, hasNextPage, fetchInProgress.current);
-      return;
-    }
-   
-    fetchInProgress.current = true;
-    setLoading(true);
-    
-    try {
-      const res = await getterFunction(`${bncApi.calllogs}/${pageNum ?? 1}/?tabType=${tabType}`);
-      
-      if (res.success) {
-        const newCalls = res.data.data;
-        setCalls((prev) => {
-          const existingIds = new Set(prev.map((call) => call._id));
-          const uniqueNewCalls = newCalls.filter((call) => !existingIds.has(call._id));
-          return [...prev, ...uniqueNewCalls];
-        });
-        setFilteredCalls((prev) => {
-          const existingIds = new Set(prev.map((call) => call._id));
-          const uniqueNewCalls = newCalls.filter((call) => !existingIds.has(call._id));
-          return [...prev, ...uniqueNewCalls];
-        });
-        setHasNextPage(res.data.pagination.hasNextPage);
-        setPage(pageNum + 1);
-      } else {
-        setError("Failed to fetch calls");
-      }
-    } catch (e) {
-      console.error("Error fetching calls:", e);
-      setError("An error occurred while fetching calls");
-    } finally {
-      setLoading(false);
-      fetchInProgress.current = false;
-    }
-  }, [loading, hasNextPage]);
-
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) {
-      setFilteredCalls(calls);
-      return;
-    }
-
-    const localResults = calls.filter((call) =>
-      call.mobile.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    if (localResults.length > 0) {
-      setFilteredCalls(localResults);
-    } else {
-      setSearchLoading(true);
-      try {
-        const res = await getterFunction(`${bncApi.searchCalls}?mobile=${searchQuery}`);
-        if (res.success) {
-          const searchResults = Array.isArray(res.data) ? res.data : res.data.data || [];
-          setFilteredCalls(searchResults);
-        } else {
-          setError("No calls found for this mobile number");
+  // Handle tab initialization
+  useEffect(() => {
+    setTabTypeforChild(tabType || "");
+    if (tabIndexValue) {
+      const tabIndexNum = Number(tabIndexValue);
+      if (!isNaN(tabIndexNum) && tabIndexNum >= 0 && tabIndexNum <= 6) {
+        setActiveFilter(tabIndexNum);
+        if (tabIndexNum === 0) {
+          setCalls([]);
           setFilteredCalls([]);
+          setPage(1);
+          setHasNextPage(true);
+          fetchCalls(1);
+        }
+      }
+    }
+  }, [tabIndexValue, tabType]);
+
+  // Fetch calls with infinite scroll
+  const fetchCalls = useCallback(
+    async (pageNum, activeFilter) => {
+      if (loading || !hasNextPage) return;
+
+      setLoading(true);
+      try {
+        console.log(activeFilter, tabType);
+        let res;
+        if (tabType === "employee" || tabType==='statement') {
+          if (!fromDate || !toDate ) {
+            setError("Please select a date range and employee");
+            return;
+          }
+          tabType==='statement' ? (
+            res = await posterFunction(bncApi.statementCalls, {
+              page: pageNum,
+              fromDate,
+              toDate,
+              tabId: 0,
+            })
+          ) : 
+          res = await posterFunction(bncApi.empStatementCalls, {
+            page: pageNum,
+            fromDate,
+            toDate,
+            employeeId,
+            tabId: 0,
+          });
+        } else {
+          res = await getterFunction(
+            `${bncApi.calllogs}/${pageNum}?tabType=${tabType}`
+          );
+        }
+
+        if (res.success) {
+          const newCalls = res.data.data || [];
+          setCalls((prev) => {
+            const existingIds = new Set(prev.map((call) => call._id));
+            const uniqueNewCalls = newCalls.filter(
+              (call) => !existingIds.has(call._id)
+            );
+            return [...prev, ...uniqueNewCalls];
+          });
+          setFilteredCalls((prev) => {
+            const existingIds = new Set(prev.map((call) => call._id));
+            const uniqueNewCalls = newCalls.filter(
+              (call) => !existingIds.has(call._id)
+            );
+            return [...prev, ...uniqueNewCalls];
+          });
+          setHasNextPage(res.data.pagination?.hasNextPage || res.data?.hasNext ||  false);
+          setPage(pageNum + 1);
+        } else {
+          setError("Failed to fetch calls");
         }
       } catch (e) {
-        console.error("Error searching calls:", e);
-        setError("An error occurred while searching");
-        setFilteredCalls([]);
+        console.error("Error fetching calls:", e);
+        setError("An error occurred while fetching calls");
       } finally {
-        setSearchLoading(false);
+        setLoading(false);
       }
+    },
+    [loading, hasNextPage, activeFilter, tabType, fromDate, toDate, employeeId]
+  );
+
+  // Trigger fetch when last call is in view
+  useEffect(() => {
+    if (inView && !loading && hasNextPage) {
+      fetchCalls(page, 0);
     }
-  }, [searchQuery, calls]);
+  }, [inView, loading, hasNextPage, page, fetchCalls]);
+
+  // Debounced search
+  const handleSearch = useMemo(
+    () =>
+      debounce(async (query) => {
+        if (!query.trim()) {
+          setFilteredCalls(calls);
+          return;
+        }
+
+        const localResults = calls.filter((call) =>
+          call.mobile?.toLowerCase().includes(query.toLowerCase())
+        );
+
+        if (localResults.length > 0) {
+          setFilteredCalls(localResults);
+        } else {
+          setSearchLoading(true);
+          try {
+            const res = await getterFunction(
+              `${bncApi.searchCalls}?mobile=${query}`
+            );
+            if (res.success) {
+              const searchResults = Array.isArray(res.data)
+                ? res.data
+                : res.data.data || [];
+              setFilteredCalls(searchResults);
+            } else {
+              setError("No calls found for this mobile number");
+              setFilteredCalls([]);
+            }
+          } catch (e) {
+            console.error("Error searching calls:", e);
+            setError("An error occurred while searching");
+            setFilteredCalls([]);
+          } finally {
+            setSearchLoading(false);
+          }
+        }
+      }, 500),
+    [calls]
+  );
+
+  // useEffect(() => {
+  //   filt
+  // }, [searchQuery]);
+
+  // console.log("Filtered Calls", searchQuery);
+
+  
+
+  // Handle date range submission
+  const handleDateSubmit = useCallback(() => {
+    const { startDate, endDate } = dateRange[0];
+    if (!startDate || !endDate) {
+      setError("Please select a date range");
+      return;
+    }
+    if (dayjs(endDate).isBefore(dayjs(startDate))) {
+      setError("End date cannot be before start date");
+      return;
+    }
+    if (!employeeId) {
+      setError("Employee ID is required");
+      return;
+    }
+
+    // Update URL with new date range
+    navigate(
+      `/admin/bnc/calls?tabIndex=${activeFilter}&tabType=employee&fromDate=${dayjs(
+        startDate
+      ).format("YYYY-MM-DD")}&toDate=${dayjs(endDate).format(
+        "YYYY-MM-DD"
+      )}&employeeId=${employeeId}`
+    );
+
+    // Reset and fetch new data
+    setCalls([]);
+    setFilteredCalls([]);
+    setPage(1);
+    setHasNextPage(true);
+    fetchCalls(1, 0);
+  }, [dateRange, employeeId, activeFilter, navigate, fetchCalls]);
 
   const exportToExcel = useCallback(() => {
     try {
@@ -156,22 +275,23 @@ const Calls = () => {
         Name: call.name || "N/A",
         Mobile: call.mobile || "N/A",
         Admitted: call.isadmitted ? "Yes" : "No",
-        Feedback: call.callData?.[0]?.feedback || "N/A",
-        ConnectionState: call.callData?.[0]?.connectionState || "N/A",
-        InterestLevel: call.callData?.[0]?.intrestLevel || "N/A",
-        CreatedAt: call.createdAt ? new Date(call.createdAt).toLocaleString() : "N/A",
+        Feedback: call.lastCallData?.feedback || "N/A",
+        ConnectionState: call.lastCallData?.connectionState || "N/A",
+        InterestLevel: call.lastCallData?.intrestLevel || "N/A",
+        CreatedAt: call.createdAt
+          ? new Date(call.createdAt).toLocaleString()
+          : "N/A",
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Calls");
 
-      // Generate buffer and trigger download
       const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-      const blob = new Blob([excelBuffer], { 
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      saveAs(blob, `calls_${new Date().toISOString().split('T')[0]}.xlsx`);
+      saveAs(blob, `calls_${new Date().toISOString().split("T")[0]}.xlsx`);
     } catch (error) {
       console.error("Error exporting to Excel:", error);
       setError("Failed to export Excel file");
@@ -184,14 +304,24 @@ const Calls = () => {
       doc.text("Calls Report", 20, 10);
 
       doc.autoTable({
-        head: [["Name", "Mobile", "Admitted", "Feedback", "Connection State", "Interest Level", "Created At"]],
+        head: [
+          [
+            "Name",
+            "Mobile",
+            "Admitted",
+            "Feedback",
+            "Connection State",
+            "Interest Level",
+            "Created At",
+          ],
+        ],
         body: filteredCalls.map((call) => [
           call.name || "N/A",
           call.mobile || "N/A",
           call.isadmitted ? "Yes" : "No",
-          call.callData?.[0]?.feedback || "N/A",
-          call.callData?.[0]?.connectionState || "N/A",
-          call.callData?.[0]?.intrestLevel || "N/A",
+          call.lastCallData?.feedback || "N/A",
+          call.lastCallData?.connectionState || "N/A",
+          call.lastCallData?.intrestLevel || "N/A",
           call.createdAt ? new Date(call.createdAt).toLocaleString() : "N/A",
         ]),
         startY: 20,
@@ -199,64 +329,29 @@ const Calls = () => {
         headStyles: { fillColor: [74, 183, 73] },
       });
 
-      doc.save(`calls_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`calls_${new Date().toISOString().split("T")[0]}.pdf`);
     } catch (error) {
       console.error("Error exporting to PDF:", error);
       setError("Failed to export PDF file");
     }
   }, [filteredCalls]);
 
-  const renderFeedback = useCallback((cs) => {
-    const feedbackMap = {
-      1: "Interested",
-      2: "Not Interested",
-      3: "Not Connected",
-      4: "Invalid Number",
-      5: "Admitted",
-      6: "Missed Follow up",
-    };
-    return feedbackMap[cs] || "No Feedback";
-  }, []);
 
-  
 
-  useEffect(() => {
-    setCalls([]);
-    setFilteredCalls([]);
-    setPage(1);
-    setHasNextPage(true);
-    
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleSearch();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery, handleSearch]);
-
-  useEffect(() => {
-    if (loading || !hasNextPage || fetchInProgress.current) return;
-
-    observer.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          fetchCalls(page);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (lastCallElementRef.current) {
-      observer.current.observe(lastCallElementRef.current);
+  const renderConnection = (connection)=>{
+    switch (connection) {
+      case 1:
+        return "Intrested";
+      case 2:
+        return "Not Intrested";
+      case 3:
+        return "Not Connected";
+      case 4:
+        return "Invalid Number";
+        case 5:
+        return "Call Later";
     }
-
-    return () => {
-      if (lastCallElementRef.current && observer.current) {
-        observer.current.unobserve(lastCallElementRef.current);
-      }
-    };
-  }, [loading, hasNextPage, page, fetchCalls]);
+  }
 
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
@@ -264,6 +359,54 @@ const Calls = () => {
         <Typography variant="h4" className="font-bold text-gray-800 mb-4">
           Calls Management
         </Typography>
+
+        {tabType === "employee" && (
+          <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
+            <Typography
+              variant="h6"
+              className="font-bold text-gray-800 mb-4"
+            >
+              Select Date Range
+            </Typography>
+            <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+              <DateRange
+                editableDateInputs={true}
+                onChange={(item) => setDateRange([item.selection])}
+                moveRangeOnFirstSelection={false}
+                ranges={dateRange}
+                sx={{
+                  "& .rdrCalendarWrapper": {
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "8px",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                  },
+                  "& .rdrDayToday .rdrDayNumber span": {
+                    color: "#1976d2",
+                    fontWeight: "bold",
+                  },
+                  "& .rdrDayNumber span": {
+                    color: "#424242",
+                  },
+                  "& .rdrSelected, & .rdrInRange, & .rdrStartEdge, & .rdrEndEdge": {
+                    backgroundColor: "#1976d2",
+                  },
+                  "& .rdrMonthAndYearPickers select": {
+                    color: "#424242",
+                    fontSize: "14px",
+                  },
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={handleDateSubmit}
+                disabled={!dateRange[0].startDate || !dateRange[0].endDate}
+              >
+                Apply Date Range
+              </Button>
+            </Box>
+          </Box>
+        )}
 
         <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={4}>
           <TextField
@@ -317,7 +460,16 @@ const Calls = () => {
             {filterButtons.map((item) => (
               <button
                 key={item.value}
-                onClick={() => setActiveFilter(item.value)}
+                onClick={() => {
+                  setActiveFilter(item.value);
+                  if (item.value === 0) {
+                    setCalls([]);
+                    setFilteredCalls([]);
+                    setPage(1);
+                    setHasNextPage(true);
+                    fetchCalls(1, 0);
+                  }
+                }}
                 className={`px-4 flex-1 ${
                   activeFilter === item.value ? "bg-cyan-600" : "bg-slate-800"
                 } hover:bg-slate-700 text-white rounded-md py-1`}
@@ -340,8 +492,8 @@ const Calls = () => {
                     <TableCell className="font-bold text-gray-800">SN</TableCell>
                     <TableCell className="font-bold text-gray-800">Name</TableCell>
                     <TableCell className="font-bold text-gray-800">Mobile</TableCell>
-                    <TableCell className="font-bold text-gray-800">Admitted</TableCell>
-                    <TableCell className="font-bold text-gray-800">Feedback</TableCell>
+                    <TableCell className="font-bold text-gray-800">Observed</TableCell>
+                  
                     <TableCell className="font-bold text-gray-800">Last Update</TableCell>
                     <TableCell className="font-bold text-gray-800">Action</TableCell>
                   </TableRow>
@@ -350,16 +502,18 @@ const Calls = () => {
                   {filteredCalls.map((call, index) => (
                     <TableRow
                       key={call._id}
-                      ref={index === filteredCalls.length - 1 ? lastCallElementRef : null}
+                      ref={index === filteredCalls.length - 1 ? lastCallRef : null}
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{call.name || "Unknown"}</TableCell>
                       <TableCell>{call.mobile || "N/A"}</TableCell>
-                      <TableCell>{call.isadmitted ? "Yes" : "No"}</TableCell>
-                      <TableCell>{renderFeedback(call?.lastCallData?.connectionState)}</TableCell>
+                      <TableCell>{renderConnection(call.connectionState)}</TableCell>
+                     
                       <TableCell>
-                        {call.updatedAt ? new Date(call.updatedAt).toLocaleString() : "N/A"}
+                        {call.updatedAt
+                          ? new Date(call.updatedAt).toLocaleString()
+                          : "N/A"}
                       </TableCell>
                       <TableCell
                         className="hover:cursor-pointer hover:bg-gray-300"
@@ -374,7 +528,7 @@ const Calls = () => {
             </TableContainer>
           </div>
         )}
-        {activeFilter === 1 && <Intrested  tabType={tabTypeforChild}/>}
+        {activeFilter === 1 && <Intrested tabType={tabTypeforChild} />}
         {activeFilter === 2 && <NotIntrested tabType={tabTypeforChild} />}
         {activeFilter === 3 && <NotConnected tabType={tabTypeforChild} />}
         {activeFilter === 4 && <InvalidNumber tabType={tabTypeforChild} />}
@@ -398,11 +552,11 @@ const Calls = () => {
             No calls found
           </Typography>
         )}
+
+        <Dialog maxWidth open={!!selectedCall} onClose={() => setSelectedCall(null)}>
+          <BncCallDetails callId={selectedCall} setCallId={setSelectedCall} />
+        </Dialog>
       </Box>
-      
-      <Dialog maxWidth open={!!selectedCall} onClose={() => setSelectedCall(null)}>
-        <BncCallDetails callId={selectedCall} setCallId={setSelectedCall} />
-      </Dialog>
     </Box>
   );
 };

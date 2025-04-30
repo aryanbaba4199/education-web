@@ -23,21 +23,37 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField,
 } from "@mui/material";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DateRangePicker } from "@mui/x-date-pickers-pro/DateRangePicker";
+import { DateRange } from "react-date-range";
+import "react-date-range/dist/styles.css"; // Main style file
+import "react-date-range/dist/theme/default.css"; // Theme CSS file
 import { Link, useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+
+// Note: Requires date-fns v2.x (e.g., 2.30.0) for react-date-range compatibility
+// npm install react-date-range date-fns@2.30.0 @types/react-date-range
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDate, setshowDate] = useState(false);
   const [activeTab, setActiveTab] = useState(2);
-  const [dateRange, setDateRange] = useState([null, null]); // [startDate, endDate]
-  const [users, setUsers] = useState([]);
-  const [forthedate, setForTheDate] = useState(null);
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: null,
+      endDate: null,
+      key: "selection",
+      
+    },
+  ]); // For Statement tab
+  const [employeeDateRange, setEmployeeDateRange] = useState([
+    {
+      startDate: null,
+      endDate: null,
+      key: "selection",
+    },
+  ]); 
   const [employees, setEmployees] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const navigate = useNavigate();
@@ -83,8 +99,8 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
       const res = await posterFunction(bncApi.getStatement, {
-        fromDate: startDate.format("YYYY-MM-DD"),
-        toDate: endDate.format("YYYY-MM-DD"),
+        fromDate: dayjs(startDate).format("YYYY-MM-DD"),
+        toDate: dayjs(endDate).format("YYYY-MM-DD"),
       });
       if (res.success) {
         setDashboardData(res.data.data);
@@ -160,44 +176,58 @@ const Dashboard = () => {
       setEmployees([]);
       setSelectedEmployeeId("");
       setDashboardData(null);
-      setDateRange([null, null]); // Reset date range
+      setDateRange([{ startDate: null, endDate: null, key: "selection" }]);
     } else if (item.value === 4) {
+      setDashboardData(null);
+      setSelectedEmployeeId("");
+      setEmployeeDateRange([{ startDate: null, endDate: null, key: "selection" }]);
       getUsers();
     }
   };
 
   const handleEmployeeDateChange = async () => {
+    const { startDate, endDate } = employeeDateRange[0];
+    if (!startDate || !endDate) {
+      setError("Please select a date range");
+      return;
+    }
+    if (dayjs(endDate).isBefore(dayjs(startDate))) {
+      setError("End date cannot be before start date");
+      return;
+    }
+    console.log(selectedEmployeeId)
+    setshowDate(false);
     setLoading(true);
     try {
-      const date = forthedate.format("YYYY-MM-DD");
       const res = await posterFunction(bncApi.getuserDateDashboard, {
-        date,
+        fromDate: dayjs(startDate).format("YYYY-MM-DD"),
+        toDate: dayjs(endDate).format("YYYY-MM-DD"),
         id: selectedEmployeeId,
       });
       if (res.success) {
         setDashboardData(res.data.data);
+      } else {
+        setError("Failed to fetch employee data for selected date range");
       }
-      setLoading(false);
     } catch (e) {
+      console.error("Error fetching employee dashboard for selected date range:", e);
+      setError("An error occurred while fetching employee data");
+    } finally {
       setLoading(false);
-      console.error("Error fetching employee dashboard for selected date:", e);
     }
   };
 
   const handleEmployeeSelect = (event) => {
     const employeeId = event.target.value;
     setSelectedEmployeeId(employeeId);
-    if (employeeId) {
-      getEmployeeData(employeeId);
-    } else {
-      setDashboardData(null);
-    }
+    setshowDate(true);
+    
   };
 
   const handleDateSubmit = () => {
-    const [startDate, endDate] = dateRange;
+    const { startDate, endDate } = dateRange[0];
     if (startDate && endDate) {
-      if (endDate.isBefore(startDate)) {
+      if (dayjs(endDate).isBefore(dayjs(startDate))) {
         setError("End date cannot be before start date");
         return;
       }
@@ -233,19 +263,28 @@ const Dashboard = () => {
       navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=today`);
     }
     if (activeTab === 3) {
-      const [startDate, endDate] = dateRange;
+      const { startDate, endDate } = dateRange[0];
       if (!startDate || !endDate) {
         setError("Please select a date range");
         return;
       }
       navigate(
-        `/admin/bnc/calls?tabIndex=${num}&tabType=statement&fromDate=${startDate.format(
-          "YYYY-MM-DD"
-        )}&toDate=${endDate.format("YYYY-MM-DD")}`
+        `/admin/bnc/calls?tabIndex=${num}&tabType=statement&fromDate=${dayjs(
+          startDate
+        ).format("YYYY-MM-DD")}&toDate=${dayjs(endDate).format("YYYY-MM-DD")}`
       );
     }
     if (activeTab === 4) {
-      navigate(`/admin/bnc/calls?tabIndex=${num}&tabType=employee`);
+      const { startDate, endDate } = employeeDateRange[0];
+      if (!startDate || !endDate) {
+        setError("Please select a date range");
+        return;
+      }
+      navigate(
+        `/admin/bnc/calls?tabIndex=${num}&tabType=employee&fromDate=${dayjs(
+          startDate
+        ).format("YYYY-MM-DD")}&toDate=${dayjs(endDate).format("YYYY-MM-DD")}&employeeId=${selectedEmployeeId}`
+      );
     }
   };
 
@@ -300,7 +339,7 @@ const Dashboard = () => {
                   color="inherit"
                   size="small"
                   onClick={() => {
-                    if (activeTab === 3) {
+                    if (activeTab === 3 || activeTab === 4) {
                       setError(null);
                       return;
                     }
@@ -318,37 +357,69 @@ const Dashboard = () => {
           <>
             {activeTab === 3 && (
               <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
-                    <DateRangePicker
-                      value={dateRange}
-                      onChange={(newValue) => setDateRange(newValue)}
-                      renderInput={(startProps, endProps) => (
-                        <>
-                          <TextField {...startProps} label="Start Date" />
-                          <Box sx={{ mx: 2 }}> to </Box>
-                          <TextField {...endProps} label="End Date" />
-                        </>
-                      )}
-                    />
-                    <Button
-                      variant="contained"
-                      onClick={handleDateSubmit}
-                      disabled={!dateRange[0] || !dateRange[1]}
-                    >
-                      Fetch Data
-                    </Button>
-                  </Box>
-                </LocalizationProvider>
+                <span
+                  onClick={()=>setshowDate(true)}
+                  className="font-bold text-gray-800 mb-4 text-lg"
+                >
+                  Select Date Range
+                </span>
+                {showDate && 
+                <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+                  <DateRange
+                    dragSelectionEnabled
+                    startDatePlaceholder="Start Date"
+                    endDatePlaceholder="End Date"
+
+                    editableDateInputs={true}
+                    onChange={(item) => setDateRange([item.selection])}
+                    moveRangeOnFirstSelection={false}
+                    ranges={dateRange}
+                    sx={{
+                      "& .rdrCalendarWrapper": {
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                      },
+                      "& .rdrDayToday .rdrDayNumber span": {
+                        color: "#1976d2",
+                        fontWeight: "bold",
+                      },
+                      "& .rdrDayNumber span": {
+                        color: "#424242",
+                      },
+                      "& .rdrSelected, & .rdrInRange, & .rdrStartEdge, & .rdrEndEdge":
+                        {
+                          backgroundColor: "#1976d2",
+                        },
+                      "& .rdrMonthAndYearPickers select": {
+                        color: "#424242",
+                        fontSize: "14px",
+                      },
+                    }}
+                  />
+                  
+                  <Button
+                    variant="contained"
+                    onClick={handleDateSubmit}
+                    disabled={!dateRange[0].startDate || !dateRange[0].endDate}
+                  >
+                    Fetch Data
+                  </Button>
+                </Box>
+                }
               </Box>
             )}
 
             {activeTab === 4 && employees.length > 0 && (
               <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
-                <Typography variant="h6" className="font-bold text-gray-800 mb-4">
-                  Select Employee
+                <Typography
+                  variant="h6"
+                  className="font-bold text-gray-800 mb-4"
+                >
+                  Select Employee and Date Range
                 </Typography>
-                <div className="flex md:flex-row flex-col justify-between items-center md:px-8 px-2">
+                <div className="flex md:flex-row flex-col justify-between items-start md:px-8 px-2 gap-4">
                   <FormControl fullWidth sx={{ maxWidth: 300 }}>
                     <InputLabel id="employee-select-label">Employee</InputLabel>
                     <Select
@@ -367,21 +438,50 @@ const Dashboard = () => {
                       ))}
                     </Select>
                   </FormControl>
-                  <div className="gap-2">
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DateRangePicker
-                        label="Date"
-                        value={forthedate}
-                        onChange={(newValue) => setForTheDate(newValue)}
-                        renderInput={(params) => <TextField {...params} />}
-                      />
-                    </LocalizationProvider>
-                    <div className="m-2">
-                      <Button variant="outlined" onClick={handleEmployeeDateChange}>
-                        Fetch Data
-                      </Button>
-                    </div>
-                  </div>
+                  {showDate && 
+                  <Box display="flex" flexDirection="column" gap={2}>
+                    <DateRange
+                      editableDateInputs={true}
+                      onChange={(item) => setEmployeeDateRange([item.selection])}
+                      moveRangeOnFirstSelection={false}
+                      ranges={employeeDateRange}
+                      sx={{
+                        "& .rdrCalendarWrapper": {
+                          border: "1px solid #e0e0e0",
+                          borderRadius: "8px",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                          fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                        },
+                        "& .rdrDayToday .rdrDayNumber span": {
+                          color: "#1976d2",
+                          fontWeight: "bold",
+                        },
+                        "& .rdrDayNumber span": {
+                          color: "#424242",
+                        },
+                        "& .rdrSelected, & .rdrInRange, & .rdrStartEdge, & .rdrEndEdge":
+                          {
+                            backgroundColor: "#1976d2",
+                          },
+                        "& .rdrMonthAndYearPickers select": {
+                          color: "#424242",
+                          fontSize: "14px",
+                        },
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleEmployeeDateChange}
+                      disabled={
+                        !selectedEmployeeId ||
+                        !employeeDateRange[0].startDate ||
+                        !employeeDateRange[0].endDate
+                      }
+                    >
+                      Fetch Data
+                    </Button>
+                  </Box>  
+                  } 
                 </div>
               </Box>
             )}
