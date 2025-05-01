@@ -36,7 +36,7 @@ import NotConnected from "./filters/NotConnected";
 import InvalidNumber from "./filters/InvalidNumber";
 import Admitted from "./filters/Admitted";
 import Missed from "./filters/Missed";
-import {useDispatch, useSelector} from 'react-redux'
+import { useDispatch, useSelector } from "react-redux";
 import { fetchUsers } from "../../../redux/Action";
 
 // Note: Requires date-fns v2.x for react-date-range
@@ -70,7 +70,7 @@ const Calls = () => {
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
   const employeeId = searchParams.get("employeeId");
-  const dispatch  = useDispatch();
+  const dispatch = useDispatch();
   const { users } = useSelector((state) => state.userState);
   const filterButtons = useMemo(
     () => [
@@ -85,9 +85,9 @@ const Calls = () => {
     []
   );
 
-  useEffect(()=>{
-    dispatch(fetchUsers())
-  }, [])
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, []);
 
   // Initialize date range from URL parameters
   useEffect(() => {
@@ -101,8 +101,6 @@ const Calls = () => {
       ]);
     }
   }, [fromDate, toDate, tabType]);
-
-  
 
   // Handle tab initialization
   useEffect(() => {
@@ -131,26 +129,25 @@ const Calls = () => {
       try {
         console.log(activeFilter, tabType);
         let res;
-        if (tabType === "employee" || tabType==='statement') {
-          if (!fromDate || !toDate ) {
+        if (tabType === "employee" || tabType === "statement") {
+          if (!fromDate || !toDate) {
             setError("Please select a date range and employee");
             return;
           }
-          tabType==='statement' ? (
-            res = await posterFunction(bncApi.statementCalls, {
-              page: pageNum,
-              fromDate,
-              toDate,
-              tabId: 0,
-            })
-          ) : 
-          res = await posterFunction(bncApi.empStatementCalls, {
-            page: pageNum,
-            fromDate,
-            toDate,
-            employeeId,
-            tabId: 0,
-          });
+          tabType === "statement"
+            ? (res = await posterFunction(bncApi.statementCalls, {
+                page: pageNum,
+                fromDate,
+                toDate,
+                tabId: 0,
+              }))
+            : (res = await posterFunction(bncApi.empStatementCalls, {
+                page: pageNum,
+                fromDate,
+                toDate,
+                employeeId,
+                tabId: 0,
+              }));
         } else {
           res = await getterFunction(
             `${bncApi.calllogs}/${pageNum}?tabType=${tabType}`
@@ -173,7 +170,9 @@ const Calls = () => {
             );
             return [...prev, ...uniqueNewCalls];
           });
-          setHasNextPage(res.data.pagination?.hasNextPage || res.data?.hasNext ||  false);
+          setHasNextPage(
+            res.data.pagination?.hasNextPage || res.data?.hasNext || false
+          );
           setPage(pageNum + 1);
         } else {
           setError("Failed to fetch calls");
@@ -243,8 +242,6 @@ const Calls = () => {
 
   // console.log("Filtered Calls", searchQuery);
 
-  
-
   // Handle date range submission
   const handleDateSubmit = useCallback(() => {
     const { startDate, endDate } = dateRange[0];
@@ -296,7 +293,10 @@ const Calls = () => {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Calls");
 
-      const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
       const blob = new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
@@ -345,9 +345,7 @@ const Calls = () => {
     }
   }, [filteredCalls]);
 
-
-
-  const renderConnection = (connection)=>{
+  const renderConnection = (connection) => {
     switch (connection) {
       case 1:
         return "Intrested";
@@ -357,10 +355,10 @@ const Calls = () => {
         return "Not Connected";
       case 4:
         return "Invalid Number";
-        case 5:
+      case 5:
         return "Call Later";
     }
-  }
+  };
 
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
@@ -371,10 +369,7 @@ const Calls = () => {
 
         {tabType === "employee" && (
           <Box className="mb-6 p-4 bg-white rounded-xl shadow-lg">
-            <Typography
-              variant="h6"
-              className="font-bold text-gray-800 mb-4"
-            >
+            <Typography variant="h6" className="font-bold text-gray-800 mb-4">
               Select Date Range
             </Typography>
             <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
@@ -397,9 +392,10 @@ const Calls = () => {
                   "& .rdrDayNumber span": {
                     color: "#424242",
                   },
-                  "& .rdrSelected, & .rdrInRange, & .rdrStartEdge, & .rdrEndEdge": {
-                    backgroundColor: "#1976d2",
-                  },
+                  "& .rdrSelected, & .rdrInRange, & .rdrStartEdge, & .rdrEndEdge":
+                    {
+                      backgroundColor: "#1976d2",
+                    },
                   "& .rdrMonthAndYearPickers select": {
                     color: "#424242",
                     fontSize: "14px",
@@ -417,7 +413,12 @@ const Calls = () => {
           </Box>
         )}
 
-        <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={4}>
+        <Box
+          display="flex"
+          flexDirection={{ xs: "column", sm: "row" }}
+          gap={2}
+          mb={4}
+        >
           <TextField
             label="Search by Mobile"
             value={searchQuery}
@@ -430,7 +431,9 @@ const Calls = () => {
                   <FaSearch className="text-gray-500" />
                 </InputAdornment>
               ),
-              endAdornment: searchLoading ? <CircularProgress size={20} /> : null,
+              endAdornment: searchLoading ? (
+                <CircularProgress size={20} />
+              ) : null,
             }}
             className="bg-white rounded-lg"
             sx={{ flex: 1 }}
@@ -498,28 +501,50 @@ const Calls = () => {
               <Table>
                 <TableHead>
                   <TableRow className="bg-green-100">
-                    <TableCell className="font-bold text-gray-800">SN</TableCell>
-                    <TableCell className="font-bold text-gray-800">Name</TableCell>
-                    <TableCell className="font-bold text-gray-800">Mobile</TableCell>
-                    <TableCell className="font-bold text-gray-800">Observed</TableCell>
-                    <TableCell className="font-bold text-gray-800">Initiate By</TableCell>
-                    <TableCell className="font-bold text-gray-800">Last Update</TableCell>
-                    <TableCell className="font-bold text-gray-800">Action</TableCell>
+                    <TableCell className="font-bold text-gray-800">
+                      SN
+                    </TableCell>
+                    <TableCell className="font-bold text-gray-800">
+                      Name
+                    </TableCell>
+                    <TableCell className="font-bold text-gray-800">
+                      Mobile
+                    </TableCell>
+                    <TableCell className="font-bold text-gray-800">
+                      Observed
+                    </TableCell>
+                    <TableCell className="font-bold text-gray-800">
+                      Initiate By
+                    </TableCell>
+                    <TableCell className="font-bold text-gray-800">
+                      Last Update
+                    </TableCell>
+                    <TableCell className="font-bold text-gray-800">
+                      Action
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredCalls.map((call, index) => (
                     <TableRow
                       key={call._id}
-                      ref={index === filteredCalls.length - 1 ? lastCallRef : null}
+                      ref={
+                        index === filteredCalls.length - 1 ? lastCallRef : null
+                      }
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{call.name || "Unknown"}</TableCell>
                       <TableCell>{call.mobile || "N/A"}</TableCell>
-                      <TableCell>{renderConnection(call.connectionState)}</TableCell>
-                      <TableCell className="hover:cursor-pointer hover:text-blue-600" >{users.find(item=>item._id===call.lastCallData.initBy)?.name  || "N/A"}</TableCell>
-                      
+                      <TableCell>
+                        {renderConnection(call.connectionState)}
+                      </TableCell>
+                      <TableCell className="hover:cursor-pointer hover:text-blue-600">
+                        {users.find(
+                          (item) => item._id === call?.lastCallData?.initBy
+                        )?.name || "N/A"}
+                      </TableCell>
+
                       <TableCell>
                         {call.updatedAt
                           ? new Date(call.updatedAt).toLocaleString()
@@ -538,12 +563,24 @@ const Calls = () => {
             </TableContainer>
           </div>
         )}
-        {activeFilter === 1 && <Intrested tabType={tabTypeforChild} users={users}/>}
-        {activeFilter === 2 && <NotIntrested tabType={tabTypeforChild} users={users}/>}
-        {activeFilter === 3 && <NotConnected tabType={tabTypeforChild} users={users}/>}
-        {activeFilter === 4 && <InvalidNumber tabType={tabTypeforChild} users={users}/>}
-        {activeFilter === 5 && <Admitted tabType={tabTypeforChild} users={users}/>}
-        {activeFilter === 6 && <Missed tabType={tabTypeforChild} users={users}/>}
+        {activeFilter === 1 && (
+          <Intrested tabType={tabTypeforChild} users={users} />
+        )}
+        {activeFilter === 2 && (
+          <NotIntrested tabType={tabTypeforChild} users={users} />
+        )}
+        {activeFilter === 3 && (
+          <NotConnected tabType={tabTypeforChild} users={users} />
+        )}
+        {activeFilter === 4 && (
+          <InvalidNumber tabType={tabTypeforChild} users={users} />
+        )}
+        {activeFilter === 5 && (
+          <Admitted tabType={tabTypeforChild} users={users} />
+        )}
+        {activeFilter === 6 && (
+          <Missed tabType={tabTypeforChild} users={users} />
+        )}
 
         {loading && (
           <Box display="flex" justifyContent="center" my={4}>
@@ -563,7 +600,11 @@ const Calls = () => {
           </Typography>
         )}
 
-        <Dialog maxWidth open={!!selectedCall} onClose={() => setSelectedCall(null)}>
+        <Dialog
+          maxWidth
+          open={!!selectedCall}
+          onClose={() => setSelectedCall(null)}
+        >
           <BncCallDetails callId={selectedCall} setCallId={setSelectedCall} />
         </Dialog>
       </Box>
