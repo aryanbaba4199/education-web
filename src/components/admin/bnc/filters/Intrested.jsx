@@ -34,7 +34,7 @@ import "jspdf-autotable";
 import BncCallDetails from "../BncCallDetails";
 import { useSearchParams } from "react-router-dom";
 
-const Intrested = ({ tabType }) => {
+const Intrested = ({ tabType, users }) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState(null);
@@ -283,6 +283,12 @@ const Intrested = ({ tabType }) => {
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
+                      <FaCalendar className="mr-2 text-blue-600" />
+                      Initiated By 
+                    </Box>
+                  </TableCell>
+                  <TableCell className="bg-blue-100 font-semibold">
+                    <Box className="flex items-center">
                       <FaEdit className="mr-2 text-blue-600" />
                       Action
                     </Box>
@@ -303,6 +309,7 @@ const Intrested = ({ tabType }) => {
                     <TableCell>{item.isadmitted ? "Yes" : "No"}</TableCell>
                     <TableCell>{item.intrestLevel ?? "N/A"}</TableCell>
                     <TableCell>{formatDate(item.nextDate)}</TableCell>
+                    <TableCell>{users.find(user=>user._id===item.initBy)?.name || "NA"}</TableCell>
                     <TableCell
                       onClick={() => setSelectedId(item._id)}
                       className="hover:cursor-pointer hover:bg-gray-300"

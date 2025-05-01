@@ -30,8 +30,6 @@ import "react-date-range/dist/theme/default.css"; // Theme CSS file
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
-// Note: Requires date-fns v2.x (e.g., 2.30.0) for react-date-range compatibility
-// npm install react-date-range date-fns@2.30.0 @types/react-date-range
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -46,7 +44,7 @@ const Dashboard = () => {
       key: "selection",
       
     },
-  ]); // For Statement tab
+  ]); 
   const [employeeDateRange, setEmployeeDateRange] = useState([
     {
       startDate: null,
@@ -304,9 +302,9 @@ const Dashboard = () => {
             </Link>
             <Link
               className="px-4 py-1 rounded-sm bg-gray-600 hover:bg-gray-700 text-white"
-              to="/admin/bnc/createuser"
+              to="/admin/bnc/employees"
             >
-              Create Employee
+              Employee Management
             </Link>
           </div>
         </div>

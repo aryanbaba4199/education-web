@@ -37,7 +37,7 @@ import "jspdf-autotable";
 import BncCallDetails from "../BncCallDetails";
 import { useSearchParams } from "react-router-dom";
 
-const Missed = ({ tabType }) => {
+const Missed = ({ tabType, users }) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState(null);
@@ -268,18 +268,19 @@ const Missed = ({ tabType }) => {
                   ))}
                 </TableRow>
               </TableHead>
-              <TableBody>
+              <TableBody className="text-red-600">
                 {data.map((item, index) => (
                   <TableRow
+                  
                     key={`${item._id}-${index}`}
                     ref={index === data.length - 1 ? lastRowRef : null}
                     className="hover:bg-gray-50"
                   >
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell>{formatName(item.name)}</TableCell>
+                    <TableCell >{formatName(item.name)}</TableCell>
                     <TableCell>{item.mobile || "N/A"}</TableCell>
                     <TableCell>{formatDate(item.nextDate)}</TableCell>
-                    <TableCell>{item.initBy || "N/A"}</TableCell>
+                    <TableCell>{users.find(user=>user._id===item.initBy)?.name || "N/A"}</TableCell>
                     <TableCell className="hover:cursor-pointer hover:bg-gray-300">
                       <FaEye
                         onClick={() => setSelectedId(item._id)}

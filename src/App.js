@@ -17,7 +17,9 @@ import PrivacyPolicy from "./components/user/Privacy";
 import AdminCollegeDetails from "./components/admin/College/AdminCollegeDetails";
 import Prompts from "./components/admin/dashboard/Prompts";
 import Admin from "./components/admin/Admin";
-import CreateUser from "./components/admin/bnc/CreateUser";
+import {Provider} from 'react-redux'
+import Employees from "./components/admin/employee/Employees";
+import store from "./redux/Store";
 
 
 const ProtectedRoute = ({children})=>{
@@ -46,6 +48,7 @@ const App = () => {
 
 
   return (
+    <Provider store={store}>
     <BrowserRouter>
     <ErrorBoundaryWrapper>
       <Routes>
@@ -65,10 +68,11 @@ const App = () => {
 
         <Route path="/admin/bnc/dashboard" element={<ProtectedRoute><BNCDashboard/></ProtectedRoute>}/>
         <Route path="/admin/bnc/calls" element={<ProtectedRoute><BncCalls/></ProtectedRoute>}/>
-        <Route path="/admin/bnc/createuser" element={<ProtectedRoute><CreateUser/> </ProtectedRoute>}/>
+        <Route path="/admin/bnc/employees" element={<ProtectedRoute><Employees/> </ProtectedRoute>}/>
       </Routes>
       </ErrorBoundaryWrapper>
     </BrowserRouter>
+    </Provider>
   );
 };
 

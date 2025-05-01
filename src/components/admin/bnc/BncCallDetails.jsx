@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { bncApi, getterFunction } from '../../../Api';
+import React, { useEffect, useState } from "react";
+import { bncApi, getterFunction } from "../../../Api";
 import {
   FaPhone,
   FaUser,
@@ -9,7 +9,7 @@ import {
   FaUniversity,
   FaBook,
   FaUsers,
-} from 'react-icons/fa';
+} from "react-icons/fa";
 import {
   Box,
   Typography,
@@ -26,17 +26,22 @@ import {
   TableHead,
   TableRow,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUsers } from "../../../redux/Action";
 
 const BncCallDetails = ({ callId, setCallId }) => {
-  console.log(callId)
+  console.log(callId);
   const [callData, setCallData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { users } = useSelector((state) => state.userState);
 
   useEffect(() => {
     if (callId) {
       getaCall(callId);
+      dispatch(fetchUsers());
     }
   }, [callId]);
 
@@ -48,11 +53,11 @@ const BncCallDetails = ({ callId, setCallId }) => {
       if (res.success) {
         setCallData(res.data);
       } else {
-        setError('Failed to fetch call details');
+        setError("Failed to fetch call details");
       }
     } catch (e) {
-      console.error('Error fetching call details:', e);
-      setError('An error occurred while fetching call details');
+      console.error("Error fetching call details:", e);
+      setError("An error occurred while fetching call details");
     } finally {
       setLoading(false);
     }
@@ -103,25 +108,29 @@ const BncCallDetails = ({ callId, setCallId }) => {
     );
   }
 
-  const renderConnectionState = (id)=>{
-    switch(id){
-      case 1 : 
-      return <span className='text-green-600'>Intrested</span>
-      case 2 :
-        return <span className='text-red-600'>Not Intrested</span>
-      case 3 : 
-      return <span className='text-yellow-600'>Not Connected</span>
-      case 4 : 
-      return <span className='text-red-600'>Invalid Number</span>
+  const renderConnectionState = (id) => {
+    switch (id) {
+      case 1:
+        return <span className="text-green-600">Intrested</span>;
+      case 2:
+        return <span className="text-red-600">Not Intrested</span>;
+      case 3:
+        return <span className="text-yellow-600">Not Connected</span>;
+      case 4:
+        return <span className="text-red-600">Invalid Number</span>;
     }
-  }
+  };
 
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <Box className="max-w-5xl mx-auto">
         {/* Header with Back Button */}
-        <Box justifyContent='space-between' display="flex" alignItems="center" mb={4}>
-          
+        <Box
+          justifyContent="space-between"
+          display="flex"
+          alignItems="center"
+          mb={4}
+        >
           <Typography variant="h4" className="font-bold text-gray-800">
             Call Details
           </Typography>
@@ -130,7 +139,7 @@ const BncCallDetails = ({ callId, setCallId }) => {
             startIcon={<FaArrowLeft />}
             onClick={() => setCallId(null)}
             className="mr-4"
-            sx={{ borderColor: '#4ab749', color: '#4ab749' }}
+            sx={{ borderColor: "#4ab749", color: "#4ab749" }}
           >
             Back to Calls
           </Button>
@@ -155,8 +164,11 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       Name
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
-                      {callData.name || 'N/A'}
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
+                      {callData.name || "N/A"}
                     </Typography>
                   </Box>
                 </Box>
@@ -170,7 +182,10 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       Mobile
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
                       {callData.mobile}
                     </Typography>
                   </Box>
@@ -185,8 +200,11 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       Admitted
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
-                      {callData.isadmitted ? 'Yes' : 'No'}
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
+                      {callData.isadmitted ? "Yes" : "No"}
                     </Typography>
                   </Box>
                 </Box>
@@ -200,7 +218,10 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       Created At
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
                       {new Date(callData.createdAt).toLocaleString()}
                     </Typography>
                   </Box>
@@ -215,7 +236,10 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       Updated At
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
                       {new Date(callData.updatedAt).toLocaleString()}
                     </Typography>
                   </Box>
@@ -230,8 +254,11 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       College ID
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
-                      {callData.collegeId || 'N/A'}
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
+                      {callData.collegeId || "N/A"}
                     </Typography>
                   </Box>
                 </Box>
@@ -245,8 +272,11 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       Course ID
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
-                      {callData.courseId || 'N/A'}
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
+                      {callData.courseId || "N/A"}
                     </Typography>
                   </Box>
                 </Box>
@@ -260,8 +290,13 @@ const BncCallDetails = ({ callId, setCallId }) => {
                     <Typography variant="body2" color="textSecondary">
                       Transferred To
                     </Typography>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
-                      {callData.transfer.length > 0 ? callData.transfer.join(', ') : 'None'}
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
+                      {callData.transfer.length > 0
+                        ? callData.transfer.join(", ")
+                        : "None"}
                     </Typography>
                   </Box>
                 </Box>
@@ -278,14 +313,30 @@ const BncCallDetails = ({ callId, setCallId }) => {
           <Table>
             <TableHead>
               <TableRow className="bg-green-100">
-                <TableCell className="font-bold text-gray-800">Start Time</TableCell>
-                <TableCell className="font-bold text-gray-800">End Time</TableCell>
-                <TableCell className="font-bold text-gray-800">Duration (s)</TableCell>
-                <TableCell className="font-bold text-gray-800">Feedback</TableCell>
-                <TableCell className="font-bold text-gray-800">Connection State</TableCell>
-                <TableCell className="font-bold text-gray-800">Interest Level</TableCell>
-                <TableCell className="font-bold text-gray-800">Initiated By</TableCell>
-                <TableCell className="font-bold text-gray-800">Next Date</TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  Start Time
+                </TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  End Time
+                </TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  Duration (s)
+                </TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  Feedback
+                </TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  Connection State
+                </TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  Interest Level
+                </TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  Initiated By
+                </TableCell>
+                <TableCell className="font-bold text-gray-800">
+                  Next Date
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -294,17 +345,23 @@ const BncCallDetails = ({ callId, setCallId }) => {
                   key={index}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  <TableCell>{interaction.startTime || 'N/A'}</TableCell>
-                  <TableCell>{interaction.endTime || 'N/A'}</TableCell>
-                  <TableCell>{interaction.duration || 'N/A'}</TableCell>
-                  <TableCell>{interaction.feedback || 'N/A'}</TableCell>
-                  <TableCell>{renderConnectionState(interaction.connectionState) || 'N/A'}</TableCell>
-                  <TableCell>{interaction.intrestLevel || 'N/A'}</TableCell>
-                  <TableCell>{interaction.initBy || 'N/A'}</TableCell>
+                  <TableCell>{interaction.startTime || "N/A"}</TableCell>
+                  <TableCell>{interaction.endTime || "N/A"}</TableCell>
+                  <TableCell>{interaction.duration || "N/A"}</TableCell>
+                  <TableCell>{interaction.feedback || "N/A"}</TableCell>
+                  <TableCell>
+                    {renderConnectionState(interaction.connectionState) ||
+                      "N/A"}
+                  </TableCell>
+                  <TableCell>{interaction.intrestLevel || "N/A"}</TableCell>
+                  <TableCell>
+                    {users.find((user) => user._id === interaction.initBy)
+                      ?.name || "N/A"}
+                  </TableCell>
                   <TableCell>
                     {interaction.nextDate
                       ? new Date(interaction.nextDate).toLocaleString()
-                      : 'N/A'}
+                      : "N/A"}
                   </TableCell>
                 </TableRow>
               ))}

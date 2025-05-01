@@ -20,7 +20,7 @@ import {
 } from 'react-icons/fa';
 import { bncApi, posterFunction } from '../../../Api';
 
-const CreateUser = () => {
+const CreateUser = ({handleClose}) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -77,6 +77,7 @@ const CreateUser = () => {
           designation: 'employee',
           password: '',
         });
+        handleClose()
       } else {
         setApiError(res.message || 'Failed to create user');
       }
@@ -89,7 +90,10 @@ const CreateUser = () => {
   };
 
   return (
-    <Box className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <Box className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className='w-full flex justify-end items-center'>
+        <Button variant='outlined' onClick={handleClose}>Close</Button>
+      </div>
       <Box className="max-w-md w-full bg-white rounded-xl shadow-lg p-6 sm:p-8">
         <Typography
           variant="h4"

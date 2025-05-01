@@ -36,6 +36,8 @@ import NotConnected from "./filters/NotConnected";
 import InvalidNumber from "./filters/InvalidNumber";
 import Admitted from "./filters/Admitted";
 import Missed from "./filters/Missed";
+import {useDispatch, useSelector} from 'react-redux'
+import { fetchUsers } from "../../../redux/Action";
 
 // Note: Requires date-fns v2.x for react-date-range
 // npm install react-intersection-observer react-date-range date-fns@2.30.0 @types/react-date-range lodash.debounce
@@ -68,7 +70,8 @@ const Calls = () => {
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
   const employeeId = searchParams.get("employeeId");
-
+  const dispatch  = useDispatch();
+  const { users } = useSelector((state) => state.userState);
   const filterButtons = useMemo(
     () => [
       { title: "All", value: 0, color: "green" },
@@ -82,6 +85,10 @@ const Calls = () => {
     []
   );
 
+  useEffect(()=>{
+    dispatch(fetchUsers())
+  }, [])
+
   // Initialize date range from URL parameters
   useEffect(() => {
     if (fromDate && toDate && tabType === "employee") {
@@ -94,6 +101,8 @@ const Calls = () => {
       ]);
     }
   }, [fromDate, toDate, tabType]);
+
+  
 
   // Handle tab initialization
   useEffect(() => {
@@ -493,7 +502,7 @@ const Calls = () => {
                     <TableCell className="font-bold text-gray-800">Name</TableCell>
                     <TableCell className="font-bold text-gray-800">Mobile</TableCell>
                     <TableCell className="font-bold text-gray-800">Observed</TableCell>
-                  
+                    <TableCell className="font-bold text-gray-800">Initiate By</TableCell>
                     <TableCell className="font-bold text-gray-800">Last Update</TableCell>
                     <TableCell className="font-bold text-gray-800">Action</TableCell>
                   </TableRow>
@@ -509,7 +518,8 @@ const Calls = () => {
                       <TableCell>{call.name || "Unknown"}</TableCell>
                       <TableCell>{call.mobile || "N/A"}</TableCell>
                       <TableCell>{renderConnection(call.connectionState)}</TableCell>
-                     
+                      <TableCell className="hover:cursor-pointer hover:text-blue-600" >{users.find(item=>item._id===call.lastCallData.initBy)?.name  || "N/A"}</TableCell>
+                      
                       <TableCell>
                         {call.updatedAt
                           ? new Date(call.updatedAt).toLocaleString()
@@ -528,12 +538,12 @@ const Calls = () => {
             </TableContainer>
           </div>
         )}
-        {activeFilter === 1 && <Intrested tabType={tabTypeforChild} />}
-        {activeFilter === 2 && <NotIntrested tabType={tabTypeforChild} />}
-        {activeFilter === 3 && <NotConnected tabType={tabTypeforChild} />}
-        {activeFilter === 4 && <InvalidNumber tabType={tabTypeforChild} />}
-        {activeFilter === 5 && <Admitted tabType={tabTypeforChild} />}
-        {activeFilter === 6 && <Missed tabType={tabTypeforChild} />}
+        {activeFilter === 1 && <Intrested tabType={tabTypeforChild} users={users}/>}
+        {activeFilter === 2 && <NotIntrested tabType={tabTypeforChild} users={users}/>}
+        {activeFilter === 3 && <NotConnected tabType={tabTypeforChild} users={users}/>}
+        {activeFilter === 4 && <InvalidNumber tabType={tabTypeforChild} users={users}/>}
+        {activeFilter === 5 && <Admitted tabType={tabTypeforChild} users={users}/>}
+        {activeFilter === 6 && <Missed tabType={tabTypeforChild} users={users}/>}
 
         {loading && (
           <Box display="flex" justifyContent="center" my={4}>

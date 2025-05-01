@@ -27,6 +27,8 @@ export const bncApi = {
     removeInvalid : `${bncUrl}/admin/removeInvalid`,
     statementCalls : `${bncUrl}/admin/statementCalls`,
     empStatementCalls : `${bncUrl}/admin/empStatementCalls`,
+    deleteEmployee : `${bncUrl}/admin/deleteeid`,
+    linkEmployee : `${bncUrl}/admin/linkid`
 }
 
 export const collegeApi  = {
@@ -129,6 +131,12 @@ export const updaterFunction = async(uri, formData)=>{
         }
      
     }catch(e){
+        const message = e?.response?.data?.message;
+        Swal.fire({
+            title : 'Error', 
+            text : message,
+            icon : 'error'
+        })
         console.error('Error  in updating',e)
         return {success: false, data : null}
     }
@@ -142,6 +150,12 @@ export const removerFunction = async(uri)=>{
         }
      
     }catch(e){
+        const message = e?.response?.data?.message;
+        Swal.fire({
+            title : 'Error', 
+            text : message,
+            icon : 'error'
+        })
         console.error('Error  in deleting',e)
         return {success: false, data : null}
     }
