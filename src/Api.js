@@ -3,8 +3,8 @@ import Swal from 'sweetalert2';
 
 // const apiUrl = 'http://192.168.31.105:5000'
 const apiUrl = 'https://education-1064837086369.asia-south1.run.app'
-// const bncUrl = 'http://192.168.31.105:5020'
-const bncUrl = `https://callbackend-307816796518.asia-south1.run.app`
+const bncUrl = 'http://192.168.31.105:5020'
+// const bncUrl = `https://callbackend-307816796518.asia-south1.run.app`
 
 export const userApi = {
     createUser : `${apiUrl}/users/createUser`,
@@ -28,7 +28,8 @@ export const bncApi = {
     statementCalls : `${bncUrl}/admin/statementCalls`,
     empStatementCalls : `${bncUrl}/admin/empStatementCalls`,
     deleteEmployee : `${bncUrl}/admin/deleteeid`,
-    linkEmployee : `${bncUrl}/admin/linkid`
+    linkEmployee : `${bncUrl}/admin/linkid`,
+    searchCalls : `${bncUrl}/admin/searchCalls`
 }
 
 export const collegeApi  = {

@@ -49,6 +49,7 @@ const Calls = () => {
   const [activeFilter, setActiveFilter] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [matchedMobile, setMatchedMobile] = useState(0)
   const [error, setError] = useState(null);
   const [selectedCall, setSelectedCall] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -195,52 +196,24 @@ const Calls = () => {
   }, [inView, loading, hasNextPage, page, fetchCalls]);
 
   // Debounced search
-  const handleSearch = useMemo(
-    () =>
-      debounce(async (query) => {
-        if (!query.trim()) {
-          setFilteredCalls(calls);
-          return;
-        }
+  const handleSearch = async()=>{
+    try{
+      setSearchLoading(true)
+      const res = await getterFunction(
+        `${bncApi.searchCalls}/${searchQuery}`
+      );
+      if(res.success){
+        setFilteredCalls((prev)=>[...prev, ...res.data])
+      }
+      setSearchLoading(false)
+    }catch(e){
+      setSearchLoading(false)
+      console.error('Error in searching', e)
+    }
+  }
+  
 
-        const localResults = calls.filter((call) =>
-          call.mobile?.toLowerCase().includes(query.toLowerCase())
-        );
-
-        if (localResults.length > 0) {
-          setFilteredCalls(localResults);
-        } else {
-          setSearchLoading(true);
-          try {
-            const res = await getterFunction(
-              `${bncApi.searchCalls}?mobile=${query}`
-            );
-            if (res.success) {
-              const searchResults = Array.isArray(res.data)
-                ? res.data
-                : res.data.data || [];
-              setFilteredCalls(searchResults);
-            } else {
-              setError("No calls found for this mobile number");
-              setFilteredCalls([]);
-            }
-          } catch (e) {
-            console.error("Error searching calls:", e);
-            setError("An error occurred while searching");
-            setFilteredCalls([]);
-          } finally {
-            setSearchLoading(false);
-          }
-        }
-      }, 500),
-    [calls]
-  );
-
-  // useEffect(() => {
-  //   filt
-  // }, [searchQuery]);
-
-  // console.log("Filtered Calls", searchQuery);
+ 
 
   // Handle date range submission
   const handleDateSubmit = useCallback(() => {
@@ -360,6 +333,9 @@ const Calls = () => {
     }
   };
 
+  
+  
+
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <Box className="max-w-7xl mx-auto">
@@ -419,11 +395,13 @@ const Calls = () => {
           gap={2}
           mb={4}
         >
+          <div className="">
           <TextField
             label="Search by Mobile"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             variant="outlined"
+            
             fullWidth
             InputProps={{
               startAdornment: (
@@ -438,6 +416,14 @@ const Calls = () => {
             className="bg-white rounded-lg"
             sx={{ flex: 1 }}
           />
+          <span
+          className={filteredCalls.filter((item)=>item.mobile.includes(searchQuery))?.length>0 ? 'text-green-600' : 'text-red-600 '}
+          >{searchQuery  && `There is ${filteredCalls.filter((item)=>item.mobile.includes(searchQuery))?.length} calls found`}
+          <span onClick={()=>handleSearch()} className="ml-8 text-white bg-slate-800 px-4 py-1 rounded-sm hover:cursor-pointer hover:bg-slate-700">
+            {searchQuery && filteredCalls.filter((item)=>item.mobile.includes(searchQuery))?.length===0 && 'Search In Database'}
+            </span>
+          </span>
+          </div>
           <Box display="flex" gap={2}>
             <Button
               variant="contained"
@@ -525,7 +511,7 @@ const Calls = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredCalls.map((call, index) => (
+                  {filteredCalls.filter((item)=>item.mobile.includes(searchQuery)).map((call, index) => (
                     <TableRow
                       key={call._id}
                       ref={
