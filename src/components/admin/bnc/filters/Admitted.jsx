@@ -35,11 +35,11 @@ import "jspdf-autotable";
 import BncCallDetails from "../BncCallDetails";
 import { useSearchParams } from "react-router-dom";
 
-const Admitted = ({tabType}) => {
+const Admitted = ({ tabType }) => {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedId, setSelectedId] =useState(null)
+  const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const observer = useRef();
@@ -47,30 +47,39 @@ const Admitted = ({tabType}) => {
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
 
-  
-
-
-  const getAdmitted = async (pageNum, tabType) => {
+  const getAdmitted = async (pageNum, tabType, fetchAll = false) => {
     console.log("Fetching admitted calls...", tabType);
     try {
       setLoading(true);
       setError(null);
 
-      const uri = tabType==='today' ? 
-      `${bncApi.filterCalls}/${5}?page=${pageNum}&tabType=${tabType}` : 
-       tabType==='statement' ? `${bncApi.statementCalls}`
-      : `${bncApi.filterCalls}/${5}?page=${pageNum}`;
+      const uri =
+        tabType === "today"
+          ? `${bncApi.filterCalls}/${5}?page=${pageNum}&tabType=${tabType}`
+          : tabType === "statement"
+          ? `${bncApi.statementCalls}`
+          : `${bncApi.filterCalls}/${5}?page=${pageNum}`;
       let res;
-      
 
-     tabType==='statement' ? res = await posterFunction(uri, {
-      page, fromDate : new Date(fromDate), toDate : new Date(toDate), tabId : 5
-    }) 
-       : res = await  getterFunction(uri);
+      if (tabType === "statement") {
+        res = await posterFunction(uri, {
+          page: pageNum,
+          fromDate: new Date(fromDate),
+          toDate: new Date(toDate),
+          tabId: 5,
+        });
+      } else {
+        res = await getterFunction(uri);
+      }
+
       if (res.success) {
         const newData = res.data.data || [];
-        setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
-        setHasMore(res.data.hasNext); // Use API's hasNext field
+        if (fetchAll) {
+          return { data: newData, hasMore: res.data.hasNext };
+        } else {
+          setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
+          setHasMore(res.data.hasNext);
+        }
       } else {
         setError(res.message || "Failed to fetch admitted calls");
       }
@@ -78,18 +87,20 @@ const Admitted = ({tabType}) => {
       console.error("Error fetching admitted calls:", e);
       setError("An error occurred while fetching admitted calls");
     } finally {
-      setLoading(false);
+      if (!fetchAll) {
+        setLoading(false);
+      }
     }
+    return { data: [], hasMore: false };
   };
 
   useEffect(() => {
-    if(tabType){
+    if (tabType) {
       getAdmitted(1, tabType);
-    }else{
+    } else {
       getAdmitted(1);
     }
-    
-  }, []);
+  }, [tabType]);
 
   const lastRowRef = useCallback(
     (node) => {
@@ -107,9 +118,9 @@ const Admitted = ({tabType}) => {
 
   useEffect(() => {
     if (page > 1) {
-      getAdmitted(page);
+      getAdmitted(page, tabType);
     }
-  }, [page]);
+  }, [page, tabType]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -120,13 +131,42 @@ const Admitted = ({tabType}) => {
     });
   };
 
-  const downloadExcel = () => {
-    const worksheetData = data.map((item, index) => ({
+  const fetchAllCalls = async () => {
+    let allData = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    setLoading(true);
+    try {
+      while (hasMorePages) {
+        const result = await getAdmitted(currentPage, tabType, true);
+        allData = [...allData, ...result.data];
+        hasMorePages = result.hasMore;
+        currentPage += 1;
+      }
+      return allData;
+    } catch (e) {
+      console.error("Error fetching all calls:", e);
+      setError("An error occurred while fetching all calls");
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadExcel = async () => {
+    const allCalls = await fetchAllCalls();
+    if (allCalls.length === 0) {
+      setError("No data available to download");
+      return;
+    }
+
+    const worksheetData = allCalls.map((item, index) => ({
       "S.N": index + 1,
       Name: item.name,
       Mobile: item.mobile,
       "Updated At": formatDate(item.updatedAt),
-      "College ID": item.collegeId ?? "N/A",
+      College: item.collegeId ?? "N/A",
       "Course ID": item.courseId ?? "N/A",
       "Closed By": item.closedBy ?? "N/A",
       "Closing Summary": item.closingSummary ?? "N/A",
@@ -148,8 +188,8 @@ const Admitted = ({tabType}) => {
           "Name",
           "Mobile",
           "Updated At",
-          "College ID",
-          "Course ID",
+          "College",
+          "Course",
           "Closed By",
           "Closing Summary",
         ],
@@ -178,7 +218,13 @@ const Admitted = ({tabType}) => {
           variant="h4"
           className="font-bold text-gray-800 mb-6 text-center"
         >
-          Admitted Calls <span className="text-lg">{tabType && `( ${tabType}  ${fromDate && toDate && ` -  From ${fromDate} to ${toDate}`} )`}</span>
+          Admitted Calls{" "}
+          <span className="text-lg">
+            {tabType &&
+              `( ${tabType} ${
+                fromDate && toDate && ` - From ${fromDate} to ${toDate}`
+              } )`}
+          </span>
         </Typography>
 
         <Box className="flex justify-end mb-4 space-x-4">
@@ -188,6 +234,7 @@ const Admitted = ({tabType}) => {
             startIcon={<FaFileExcel />}
             onClick={downloadExcel}
             className="bg-green-600 hover:bg-green-700"
+            disabled={loading}
           >
             Download Excel
           </Button>
@@ -212,7 +259,7 @@ const Admitted = ({tabType}) => {
                 size="small"
                 onClick={() => {
                   setPage(1);
-                  getAdmitted(1);
+                  getAdmitted(1, tabType);
                 }}
               >
                 Retry
@@ -264,7 +311,7 @@ const Admitted = ({tabType}) => {
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaUniversity className="mr-2 text-blue-600" />
-                      College ID
+                      College
                     </Box>
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
@@ -308,7 +355,12 @@ const Admitted = ({tabType}) => {
                     <TableCell>{item.courseId ?? "N/A"}</TableCell>
                     <TableCell>{item.closedBy ?? "N/A"}</TableCell>
                     <TableCell>{item.closingSummary ?? "N/A"}</TableCell>
-                    <TableCell onClick={()=>setSelectedId(item._id)} className="hover:cursor-pointer hover:bg-gray-300"><FaEye className="text-green-600"/></TableCell>
+                    <TableCell
+                      onClick={() => setSelectedId(item._id)}
+                      className="hover:cursor-pointer hover:bg-gray-300"
+                    >
+                      <FaEye className="text-green-600" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -322,8 +374,8 @@ const Admitted = ({tabType}) => {
           </Box>
         )}
       </Box>
-      <Dialog  open={selectedId!==null} onClose={()=>setSelectedId(null)}>
-        <BncCallDetails callId={selectedId} setCallId={setSelectedId}/>
+      <Dialog open={selectedId !== null} onClose={() => setSelectedId(null)}>
+        <BncCallDetails callId={selectedId} setCallId={setSelectedId} />
       </Dialog>
     </Box>
   );

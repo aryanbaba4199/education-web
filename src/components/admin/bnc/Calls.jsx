@@ -248,39 +248,88 @@ const Calls = () => {
     fetchCalls(1, 0);
   }, [dateRange, employeeId, activeFilter, navigate, fetchCalls]);
 
-  const exportToExcel = useCallback(() => {
-    try {
-      const exportData = filteredCalls.map((call) => ({
-        Name: call.name || "N/A",
-        Mobile: call.mobile || "N/A",
-        Admitted: call.isadmitted ? "Yes" : "No",
-        Feedback: call.lastCallData?.feedback || "N/A",
-        ConnectionState: call.lastCallData?.connectionState || "N/A",
-        InterestLevel: call.lastCallData?.intrestLevel || "N/A",
-        CreatedAt: call.createdAt
-          ? new Date(call.createdAt).toLocaleString()
-          : "N/A",
-      }));
+const exportToExcel = useCallback(async () => {
+  setLoading(true);
+  try {
+    // Create a copy of existing calls
+    let allCalls = [...calls];
+    let currentPage = page;
+    let isNextPageAvailable = hasNextPage;
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Calls");
+    // Fetch all remaining pages
+    while (isNextPageAvailable) {
+      const res = await posterFunction(
+        tabType === "statement" ? bncApi.statementCalls : bncApi.empStatementCalls,
+        {
+          page: currentPage,
+          fromDate,
+          toDate,
+          employeeId: tabType === "employee" ? employeeId : undefined,
+          tabId: 0,
+        }
+      );
 
-      const excelBuffer = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array",
-      });
-      const blob = new Blob([excelBuffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      saveAs(blob, `calls_${new Date().toISOString().split("T")[0]}.xlsx`);
-    } catch (error) {
-      console.error("Error exporting to Excel:", error);
-      setError("Failed to export Excel file");
+      if (res.success) {
+        const newCalls = res.data.data || [];
+        if (newCalls.length === 0) {
+          // Break if no new calls are returned
+          isNextPageAvailable = false;
+        } else {
+          const existingIds = new Set(allCalls.map((call) => call._id));
+          const uniqueNewCalls = newCalls.filter((call) => !existingIds.has(call._id));
+          allCalls = [...allCalls, ...uniqueNewCalls];
+          isNextPageAvailable = res.data.pagination?.hasNextPage || res.data?.hasNext || false;
+          currentPage += 1;
+        }
+      } else {
+        throw new Error("Failed to fetch calls");
+      }
     }
-  }, [filteredCalls]);
+
+    // Update state after fetching all calls
+    setCalls(allCalls);
+    setFilteredCalls(allCalls);
+    setPage(currentPage);
+    setHasNextPage(isNextPageAvailable);
+
+    // Generate Excel file
+    const exportData = allCalls.map((call) => ({
+      Name: call.name || "N/A",
+      Mobile: call.mobile || "N/A",
+      Admitted: call.isadmitted ? "Yes" : "No",
+      Feedback: call.lastCallData?.feedback || "N/A",
+      ConnectionState: call.lastCallData?.connectionState || "N/A",
+      InterestLevel: call.lastCallData?.intrestLevel || "N/A",
+      CreatedAt: call.createdAt
+        ? new Date(call.createdAt).toLocaleString()
+        : "N/A",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Calls");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    saveAs(blob, `calls_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  } catch (error) {
+    console.error("Error exporting to Excel:", error);
+    setError("Failed to export Excel file");
+  } finally {
+    setLoading(false);
+  }
+}, [calls, page, hasNextPage, tabType, fromDate, toDate, employeeId]);
+
 
   const exportToPDF = useCallback(() => {
+    if(hasNextPage){
+      fetchCalls(setPage)
+    }
     try {
       const doc = new jsPDF();
       doc.text("Calls Report", 20, 10);
@@ -292,7 +341,7 @@ const Calls = () => {
             "Mobile",
             "Admitted",
             "Feedback",
-            "Connection State",
+            "Status",
             "Interest Level",
             "Created At",
           ],
@@ -302,7 +351,7 @@ const Calls = () => {
           call.mobile || "N/A",
           call.isadmitted ? "Yes" : "No",
           call.lastCallData?.feedback || "N/A",
-          call.lastCallData?.connectionState || "N/A",
+          renderConnection(call.lastCallData?.connectionState),
           call.lastCallData?.intrestLevel || "N/A",
           call.createdAt ? new Date(call.createdAt).toLocaleString() : "N/A",
         ]),
@@ -330,6 +379,10 @@ const Calls = () => {
         return "Invalid Number";
       case 5:
         return "Call Later";
+      case 6 : 
+        return 'Admitted';
+      default : 
+        return 'Not Provided'
     }
   };
 

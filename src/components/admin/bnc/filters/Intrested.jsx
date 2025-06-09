@@ -48,35 +48,40 @@ const Intrested = ({ tabType, users }) => {
   const toDate = searchParams.get("toDate");
   const employeeId = searchParams.get("employeeId");
 
-  const getInterested = async (pageNum, tabType) => {
+  const getInterested = async (pageNum, tabType, fetchAll = false) => {
     console.log("Fetching interested calls...", tabType);
     try {
       setLoading(true);
       setError(null);
       let res;
-      tabType === "statement"
-        ? (res = await posterFunction(bncApi.statementCalls, {
-            page,
-            fromDate: new Date(fromDate),
-            toDate: new Date(toDate),
-            tabId: 1,
-          }))
-        : tabType==='employee' ? (
-          res = await posterFunction(bncApi.empStatementCalls, {
-            page,
-            fromDate: new Date(fromDate),
-            toDate: new Date(toDate),
-            tabId: 1,
-            employeeId 
-          })
-        ) : 
-        (res = await getterFunction(
-            `${bncApi.filterCalls}/${1}?page=${pageNum}&tabType=${tabType}`
-          ));
+      if (tabType === "statement") {
+        res = await posterFunction(bncApi.statementCalls, {
+          page: pageNum,
+          fromDate: new Date(fromDate),
+          toDate: new Date(toDate),
+          tabId: 1,
+        });
+      } else if (tabType === "employee") {
+        res = await posterFunction(bncApi.empStatementCalls, {
+          page: pageNum,
+          fromDate: new Date(fromDate),
+          toDate: new Date(toDate),
+          tabId: 1,
+          employeeId,
+        });
+      } else {
+        res = await getterFunction(
+          `${bncApi.filterCalls}/${1}?page=${pageNum}&tabType=${tabType}`
+        );
+      }
       if (res.success) {
         const newData = res.data.data || [];
-        setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
-        setHasMore(res.data.hasNext);
+        if (fetchAll) {
+          return { data: newData, hasMore: res.data.hasNext };
+        } else {
+          setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
+          setHasMore(res.data.hasNext);
+        }
       } else {
         setError(res.message || "Failed to fetch data");
       }
@@ -84,8 +89,11 @@ const Intrested = ({ tabType, users }) => {
       console.error("Error fetching interested calls:", e);
       setError("An error occurred while fetching data");
     } finally {
-      setLoading(false);
+      if (!fetchAll) {
+        setLoading(false);
+      }
     }
+    return { data: [], hasMore: false };
   };
 
   useEffect(() => {
@@ -125,8 +133,37 @@ const Intrested = ({ tabType, users }) => {
     });
   };
 
-  const downloadExcel = () => {
-    const worksheetData = data.map((item) => ({
+  const fetchAllCalls = async () => {
+    let allData = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    setLoading(true);
+    try {
+      while (hasMorePages) {
+        const result = await getInterested(currentPage, tabType, true);
+        allData = [...allData, ...result.data];
+        hasMorePages = result.hasMore;
+        currentPage += 1;
+      }
+      return allData;
+    } catch (e) {
+      console.error("Error fetching all calls:", e);
+      setError("An error occurred while fetching all calls");
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadExcel = async () => {
+    const allCalls = await fetchAllCalls();
+    if (allCalls.length === 0) {
+      setError("No data available to download");
+      return;
+    }
+
+    const worksheetData = allCalls.map((item) => ({
       Name: item.name,
       Mobile: item.mobile,
       "Updated At": formatDate(item.updatedAt),
@@ -193,6 +230,7 @@ const Intrested = ({ tabType, users }) => {
             startIcon={<FaFileExcel />}
             onClick={downloadExcel}
             className="bg-green-600 hover:bg-green-700"
+            disabled={loading}
           >
             Download Excel
           </Button>
@@ -284,7 +322,7 @@ const Intrested = ({ tabType, users }) => {
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaCalendar className="mr-2 text-blue-600" />
-                      Initiated By 
+                      Initiated By
                     </Box>
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
@@ -309,7 +347,7 @@ const Intrested = ({ tabType, users }) => {
                     <TableCell>{item.isadmitted ? "Yes" : "No"}</TableCell>
                     <TableCell>{item.intrestLevel ?? "N/A"}</TableCell>
                     <TableCell>{formatDate(item.nextDate)}</TableCell>
-                    <TableCell>{users.find(user=>user._id===item.initBy)?.name || "NA"}</TableCell>
+                    <TableCell>{users.find(user => user._id === item.initBy)?.name || "NA"}</TableCell>
                     <TableCell
                       onClick={() => setSelectedId(item._id)}
                       className="hover:cursor-pointer hover:bg-gray-300"

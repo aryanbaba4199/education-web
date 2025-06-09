@@ -47,39 +47,48 @@ const NotIntrested = ({ tabType }) => {
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
 
-  const getInterested = async (pageNum) => {
+  const getNotInterested = async (pageNum, tabType, fetchAll = false) => {
     try {
       setLoading(true);
       setError(null);
       let res;
-      tabType === "statement"
-        ? (res = await posterFunction(bncApi.statementCalls, {
-            page,
-            fromDate: new Date(fromDate),
-            toDate: new Date(toDate),
-            tabId: 3,
-          }))
-        : (res = await getterFunction(
-            `${bncApi.filterCalls}/${3}?page=${pageNum}&tabType=${tabType}`
-          ));
+      if (tabType === "statement") {
+        res = await posterFunction(bncApi.statementCalls, {
+          page: pageNum,
+          fromDate: new Date(fromDate),
+          toDate: new Date(toDate),
+          tabId: 3,
+        });
+      } else {
+        res = await getterFunction(
+          `${bncApi.filterCalls}/${3}?page=${pageNum}&tabType=${tabType}`
+        );
+      }
       if (res.success) {
         const newData = res.data.data || [];
-        setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
-        setHasMore(res.data.hasNext); // Assume there's more if we got a full page
+        if (fetchAll) {
+          return { data: newData, hasMore: res.data.hasNext };
+        } else {
+          setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
+          setHasMore(res.data.hasNext);
+        }
       } else {
-        setError(res.message || "Failed to fetch data");
+        setError(res.message || "Failed to fetch not interested calls");
       }
     } catch (e) {
-      console.error("Error fetching interested calls:", e);
-      setError("An error occurred while fetching data");
+      console.error("Error fetching not interested calls:", e);
+      setError("An error occurred while fetching not interested calls");
     } finally {
-      setLoading(false);
+      if (!fetchAll) {
+        setLoading(false);
+      }
     }
+    return { data: [], hasMore: false };
   };
 
   useEffect(() => {
-    getInterested(1);
-  }, []);
+    getNotInterested(1, tabType);
+  }, [tabType]);
 
   const lastRowRef = useCallback(
     (node) => {
@@ -97,9 +106,9 @@ const NotIntrested = ({ tabType }) => {
 
   useEffect(() => {
     if (page > 1) {
-      getInterested(page);
+      getNotInterested(page, tabType);
     }
-  }, [page]);
+  }, [page, tabType]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -110,49 +119,67 @@ const NotIntrested = ({ tabType }) => {
     });
   };
 
-  const downloadExcel = () => {
-    const worksheetData = data.map((item) => ({
-      Name: item.name,
-      Mobile: item.mobile,
+  const fetchAllCalls = async () => {
+    let allData = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    setLoading(true);
+    try {
+      while (hasMorePages) {
+        const result = await getNotInterested(currentPage, tabType, true);
+        allData = [...allData, ...result.data];
+        hasMorePages = result.hasMore;
+        currentPage += 1;
+      }
+      return allData;
+    } catch (e) {
+      console.error("Error fetching all calls:", e);
+      setError("An error occurred while fetching all calls");
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadExcel = async () => {
+    const allCalls = await fetchAllCalls();
+    if (allCalls.length === 0) {
+      setError("No data available to download");
+      return;
+    }
+
+    const worksheetData = allCalls.map((item, index) => ({
+      "S.N": index + 1,
+      Name: item.name || "N/A",
+      Mobile: item.mobile || "N/A",
       "Updated At": formatDate(item.updatedAt),
-      Admitted: item.isadmitted ? "Yes" : "No",
-      "Interest Level": item.intrestLevel ?? "N/A",
-      "Next Date": formatDate(item.nextDate),
+      Feedback: item.feedback ?? "N/A",
     }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Interested");
-    XLSX.writeFile(workbook, "interested_calls.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "NotInterested");
+    XLSX.writeFile(workbook, "not_interested_calls.xlsx");
   };
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    doc.text("Interested Calls", 14, 20);
+    doc.text("Not Interested Calls", 14, 20);
     doc.autoTable({
       startY: 30,
-      head: [
-        [
-          "Name",
-          "Mobile",
-          "Updated At",
-          "Admitted",
-          "Interest Level",
-          "Next Date",
-        ],
-      ],
-      body: data.map((item) => [
-        item.name,
-        item.mobile,
+      head: [["S.N", "Name", "Mobile", "Updated At", "Feedback"]],
+      body: data.map((item, index) => [
+        index + 1,
+        item.name || "N/A",
+        item.mobile || "N/A",
         formatDate(item.updatedAt),
-        item.isadmitted ? "Yes" : "No",
-        item.intrestLevel ?? "N/A",
-        formatDate(item.nextDate),
+        item.feedback ?? "N/A",
       ]),
       theme: "striped",
       styles: { fontSize: 10 },
       headStyles: { fillColor: [66, 165, 245] },
     });
-    doc.save("interested_calls.pdf");
+    doc.save("not_interested_calls.pdf");
   };
 
   return (
@@ -162,13 +189,13 @@ const NotIntrested = ({ tabType }) => {
           variant="h4"
           className="font-bold text-gray-800 mb-6 text-center"
         >
-          Not Connected Calls
+          Not Interested Calls
         </Typography>
         <span className="text-lg text-center">
           {tabType &&
-            `( ${tabType}  ${
-              fromDate && toDate && ` -  From ${fromDate} to ${toDate}`
-            } )`}
+            `( ${tabType} ${
+              fromDate && toDate && ` - From ${fromDate} to ${toDate}`
+            })`}
         </span>
 
         <Box className="flex justify-end mb-4 space-x-4">
@@ -178,6 +205,7 @@ const NotIntrested = ({ tabType }) => {
             startIcon={<FaFileExcel />}
             onClick={downloadExcel}
             className="bg-green-600 hover:bg-green-700"
+            disabled={loading}
           >
             Download Excel
           </Button>
@@ -200,7 +228,7 @@ const NotIntrested = ({ tabType }) => {
               <Button
                 color="inherit"
                 size="small"
-                onClick={() => getInterested(1)}
+                onClick={() => getNotInterested(1, tabType)}
               >
                 Retry
               </Button>
@@ -212,7 +240,7 @@ const NotIntrested = ({ tabType }) => {
 
         {data.length === 0 && !loading && !error && (
           <Alert severity="info" className="mb-4">
-            No interested calls found.
+            No not interested calls found.
           </Alert>
         )}
 
@@ -227,7 +255,7 @@ const NotIntrested = ({ tabType }) => {
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaServer className="mr-2 text-blue-600" />
-                      SN
+                      S.N
                     </Box>
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
@@ -248,7 +276,6 @@ const NotIntrested = ({ tabType }) => {
                       Updated At
                     </Box>
                   </TableCell>
-
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaCalendar className="mr-2 text-blue-600" />
@@ -271,10 +298,10 @@ const NotIntrested = ({ tabType }) => {
                     className="hover:bg-gray-50"
                   >
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.mobile}</TableCell>
+                    <TableCell>{item.name || "N/A"}</TableCell>
+                    <TableCell>{item.mobile || "N/A"}</TableCell>
                     <TableCell>{formatDate(item.updatedAt)}</TableCell>
-                    <TableCell>{item.feedback}</TableCell>
+                    <TableCell>{item.feedback ?? "N/A"}</TableCell>
                     <TableCell
                       onClick={() => setSelectedId(item._id)}
                       className="hover:cursor-pointer hover:bg-gray-300"

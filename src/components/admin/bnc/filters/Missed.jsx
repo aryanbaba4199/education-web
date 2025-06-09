@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -51,25 +45,31 @@ const Missed = ({ tabType, users }) => {
   const toDate = searchParams.get("toDate");
 
   const getMissed = useCallback(
-    async (pageNum) => {
+    async (pageNum, tabType, fetchAll = false) => {
       try {
         setLoading(true);
         setError(null);
         let res;
-        tabType === "statement"
-          ? (res = await posterFunction(bncApi.statementCalls, {
-              page,
-              fromDate: new Date(fromDate),
-              toDate: new Date(toDate),
-              tabId: 6,
-            }))
-          : (res = await getterFunction(
-              `${bncApi.filterCalls}/${6}?page=${pageNum}&tabType=${tabType}`
-            ));
+        if (tabType === "statement") {
+          res = await posterFunction(bncApi.statementCalls, {
+            page: pageNum,
+            fromDate: new Date(fromDate),
+            toDate: new Date(toDate),
+            tabId: 6,
+          });
+        } else {
+          res = await getterFunction(
+            `${bncApi.filterCalls}/${6}?page=${pageNum}&tabType=${tabType}`
+          );
+        }
         if (res.success) {
           const newData = res.data.data || [];
-          setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
-          setHasMore(res.data.hasNext);
+          if (fetchAll) {
+            return { data: newData, hasMore: res.data.hasNext };
+          } else {
+            setData((prev) => (pageNum === 1 ? newData : [...prev, ...newData]));
+            setHasMore(res.data.hasNext);
+          }
         } else {
           setError(res.message || "Failed to fetch missed follow-up calls");
         }
@@ -77,15 +77,18 @@ const Missed = ({ tabType, users }) => {
         console.error("Error fetching missed follow-up calls:", e);
         setError("An error occurred while fetching missed follow-up calls");
       } finally {
-        setLoading(false);
+        if (!fetchAll) {
+          setLoading(false);
+        }
       }
+      return { data: [], hasMore: false };
     },
-    [tabType]
+    [fromDate, toDate]
   );
 
   useEffect(() => {
-    getMissed(1);
-  }, [getMissed]);
+    getMissed(1, tabType);
+  }, [getMissed, tabType]);
 
   const lastRowRef = useCallback(
     (node) => {
@@ -103,9 +106,9 @@ const Missed = ({ tabType, users }) => {
 
   useEffect(() => {
     if (page > 1) {
-      getMissed(page);
+      getMissed(page, tabType);
     }
-  }, [page, getMissed]);
+  }, [page, getMissed, tabType]);
 
   const formatDate = useCallback((dateString) => {
     if (!dateString) return "N/A";
@@ -120,14 +123,44 @@ const Missed = ({ tabType, users }) => {
     return name && name.trim() ? name : "Unknown";
   }, []);
 
-  const downloadExcel = useCallback(() => {
+  const fetchAllCalls = useCallback(async () => {
+    let allData = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    setLoading(true);
     try {
-      const worksheetData = data.map((item, index) => ({
+      while (hasMorePages) {
+        const result = await getMissed(currentPage, tabType, true);
+        allData = [...allData, ...result.data];
+        hasMorePages = result.hasMore;
+        currentPage += 1;
+      }
+      return allData;
+    } catch (e) {
+      console.error("Error fetching all calls:", e);
+      setError("An error occurred while fetching all calls");
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [getMissed, tabType]);
+
+  const downloadExcel = useCallback(async () => {
+    try {
+      const allCalls = await fetchAllCalls();
+      if (allCalls.length === 0) {
+        setError("No data available to download");
+        return;
+      }
+
+      const worksheetData = allCalls.map((item, index) => ({
         "S.N": index + 1,
         Name: formatName(item.name),
         Mobile: item.mobile || "N/A",
         "Next Date": formatDate(item.nextDate),
         Feedback: item.feedback ?? "N/A",
+        "Initiated By": users.find(user => user._id === item.initBy)?.name || "N/A",
       }));
       const worksheet = XLSX.utils.json_to_sheet(worksheetData);
       const workbook = XLSX.utils.book_new();
@@ -140,7 +173,7 @@ const Missed = ({ tabType, users }) => {
       console.error("Error exporting Excel:", error);
       setError("Failed to export Excel file");
     }
-  }, [data, formatName, formatDate]);
+  }, [fetchAllCalls, formatName, formatDate, users]);
 
   const downloadPDF = useCallback(() => {
     try {
@@ -148,13 +181,14 @@ const Missed = ({ tabType, users }) => {
       doc.text("Missed Follow-Up Calls", 14, 20);
       doc.autoTable({
         startY: 30,
-        head: [["S.N", "Name", "Mobile", "Next Date", "Feedback"]],
+        head: [["S.N", "Name", "Mobile", "Next Date", "Feedback", "Initiated By"]],
         body: data.map((item, index) => [
           index + 1,
           formatName(item.name),
           item.mobile || "N/A",
           formatDate(item.nextDate),
           item.feedback ?? "N/A",
+          users.find(user => user._id === item.initBy)?.name || "N/A",
         ]),
         theme: "striped",
         styles: { fontSize: 10 },
@@ -167,7 +201,7 @@ const Missed = ({ tabType, users }) => {
       console.error("Error exporting PDF:", error);
       setError("Failed to export PDF file");
     }
-  }, [data, formatName, formatDate]);
+  }, [data, formatName, formatDate, users]);
 
   const tableHeaders = useMemo(
     () => [
@@ -195,6 +229,12 @@ const Missed = ({ tabType, users }) => {
           className="font-bold text-gray-800 mb-6 text-center"
         >
           Missed Follow-Up Calls
+          <span className="text-lg">
+            {tabType &&
+              ` (${tabType} ${
+                fromDate && toDate && ` - From ${fromDate} to ${toDate}`
+              })`}
+          </span>
         </Typography>
 
         <Box className="flex justify-end mb-4 space-x-4">
@@ -204,7 +244,7 @@ const Missed = ({ tabType, users }) => {
             startIcon={<FaFileExcel />}
             onClick={downloadExcel}
             className="bg-green-600 hover:bg-green-700"
-            disabled={data.length === 0}
+            disabled={loading || data.length === 0}
           >
             Download Excel
           </Button>
@@ -230,7 +270,7 @@ const Missed = ({ tabType, users }) => {
                 size="small"
                 onClick={() => {
                   setPage(1);
-                  getMissed(1);
+                  getMissed(1, tabType);
                 }}
               >
                 Retry
@@ -271,16 +311,17 @@ const Missed = ({ tabType, users }) => {
               <TableBody className="text-red-600">
                 {data.map((item, index) => (
                   <TableRow
-                  
                     key={`${item._id}-${index}`}
                     ref={index === data.length - 1 ? lastRowRef : null}
                     className="hover:bg-gray-50"
                   >
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell >{formatName(item.name)}</TableCell>
+                    <TableCell>{formatName(item.name)}</TableCell>
                     <TableCell>{item.mobile || "N/A"}</TableCell>
                     <TableCell>{formatDate(item.nextDate)}</TableCell>
-                    <TableCell>{users.find(user=>user._id===item.initBy)?.name || "N/A"}</TableCell>
+                    <TableCell>
+                      {users.find(user => user._id === item.initBy)?.name || "N/A"}
+                    </TableCell>
                     <TableCell className="hover:cursor-pointer hover:bg-gray-300">
                       <FaEye
                         onClick={() => setSelectedId(item._id)}
