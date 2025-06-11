@@ -163,13 +163,15 @@ const Intrested = ({ tabType, users }) => {
       return;
     }
 
-    const worksheetData = allCalls.map((item) => ({
+    const worksheetData = allCalls.map((item, index) => ({
+      SN : index+1,
       Name: item.name,
       Mobile: item.mobile,
-      "Updated At": formatDate(item.updatedAt),
-      Admitted: item.isadmitted ? "Yes" : "No",
-      "Interest Level": item.intrestLevel ?? "N/A",
-      "Next Date": formatDate(item.nextDate),
+      College : item.collegeId??'Not Provided',
+      Course : item.courseId??'Not Provided',
+      
+      'Intrest Level': item.intrestLevel ?? "N/A",
+      "Init By": item.initBy,
     }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
@@ -184,19 +186,21 @@ const Intrested = ({ tabType, users }) => {
       startY: 30,
       head: [
         [
+          "SN",
           "Name",
           "Mobile",
-          "Updated At",
-          "Admitted",
+          "College",
+          "Course",
           "Interest Level",
-          "Next Date",
+          "Init By",
         ],
       ],
       body: data.map((item) => [
         item.name,
         item.mobile,
-        formatDate(item.updatedAt),
-        item.isadmitted ? "Yes" : "No",
+       
+        item.collegeId,
+        item.courseId,
         item.intrestLevel ?? "N/A",
         formatDate(item.nextDate),
       ]),
@@ -295,16 +299,17 @@ const Intrested = ({ tabType, users }) => {
                       Mobile
                     </Box>
                   </TableCell>
+                  
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
-                      <FaClock className="mr-2 text-blue-600" />
-                      Updated At
+                      <FaCheckCircle className="mr-2 text-blue-600" />
+                      College
                     </Box>
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaCheckCircle className="mr-2 text-blue-600" />
-                      Admitted
+                      Course
                     </Box>
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
@@ -343,11 +348,12 @@ const Intrested = ({ tabType, users }) => {
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.mobile}</TableCell>
-                    <TableCell>{formatDate(item.updatedAt)}</TableCell>
-                    <TableCell>{item.isadmitted ? "Yes" : "No"}</TableCell>
+                  
+                    <TableCell><span className={!item.collegeId && 'text-red-600'}>{item.collegeId??'Not Provided' }</span></TableCell>
+                                     <TableCell><span className={!item.courseId && 'text-red-600'}>{item.courseId??'Not Provided' }</span></TableCell>
                     <TableCell>{item.intrestLevel ?? "N/A"}</TableCell>
                     <TableCell>{formatDate(item.nextDate)}</TableCell>
-                    <TableCell>{users.find(user => user._id === item.initBy)?.name || "NA"}</TableCell>
+                    <TableCell>{item.initBy}</TableCell>
                     <TableCell
                       onClick={() => setSelectedId(item._id)}
                       className="hover:cursor-pointer hover:bg-gray-300"

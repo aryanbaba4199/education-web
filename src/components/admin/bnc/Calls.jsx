@@ -37,7 +37,7 @@ import InvalidNumber from "./filters/InvalidNumber";
 import Admitted from "./filters/Admitted";
 import Missed from "./filters/Missed";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUsers } from "../../../redux/Action";
+
 
 // Note: Requires date-fns v2.x for react-date-range
 // npm install react-intersection-observer react-date-range date-fns@2.30.0 @types/react-date-range lodash.debounce
@@ -72,7 +72,7 @@ const Calls = () => {
   const toDate = searchParams.get("toDate");
   const employeeId = searchParams.get("employeeId");
   const dispatch = useDispatch();
-  const { users } = useSelector((state) => state.userState);
+
   const filterButtons = useMemo(
     () => [
       { title: "All", value: 0, color: "green" },
@@ -86,9 +86,7 @@ const Calls = () => {
     []
   );
 
-  useEffect(() => {
-    dispatch(fetchUsers());
-  }, []);
+
 
   // Initialize date range from URL parameters
   useEffect(() => {
@@ -579,9 +577,7 @@ const exportToExcel = useCallback(async () => {
                         {renderConnection(call.connectionState)}
                       </TableCell>
                       <TableCell className="hover:cursor-pointer hover:text-blue-600">
-                        {users.find(
-                          (item) => item._id === call?.lastCallData?.initBy
-                        )?.name || "N/A"}
+                        {call.initBy}
                       </TableCell>
 
                       <TableCell>
@@ -603,22 +599,22 @@ const exportToExcel = useCallback(async () => {
           </div>
         )}
         {activeFilter === 1 && (
-          <Intrested tabType={tabTypeforChild} users={users} />
+          <Intrested tabType={tabTypeforChild} />
         )}
         {activeFilter === 2 && (
-          <NotIntrested tabType={tabTypeforChild} users={users} />
+          <NotIntrested tabType={tabTypeforChild} />
         )}
         {activeFilter === 3 && (
-          <NotConnected tabType={tabTypeforChild} users={users} />
+          <NotConnected tabType={tabTypeforChild} />
         )}
         {activeFilter === 4 && (
-          <InvalidNumber tabType={tabTypeforChild} users={users} />
+          <InvalidNumber tabType={tabTypeforChild} />
         )}
         {activeFilter === 5 && (
-          <Admitted tabType={tabTypeforChild} users={users} />
+          <Admitted tabType={tabTypeforChild}  />
         )}
         {activeFilter === 6 && (
-          <Missed tabType={tabTypeforChild} users={users} />
+          <Missed tabType={tabTypeforChild}  />
         )}
 
         {loading && (

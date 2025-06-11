@@ -162,14 +162,14 @@ const Admitted = ({ tabType }) => {
     }
 
     const worksheetData = allCalls.map((item, index) => ({
-      "S.N": index + 1,
+      SN: index + 1,
       Name: item.name,
       Mobile: item.mobile,
-      "Updated At": formatDate(item.updatedAt),
-      College: item.collegeId ?? "N/A",
-      "Course ID": item.courseId ?? "N/A",
-      "Closed By": item.closedBy ?? "N/A",
-      "Closing Summary": item.closingSummary ?? "N/A",
+
+      College: item.collegeId ?? "Not Provided",
+      Course: item.courseId ?? "Not Provided",
+      "Closed By": item.closedBy ?? "Not Provided",
+      "Closing Summary": item.closingSummary ?? "Not Provided",
     }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
@@ -302,12 +302,7 @@ const Admitted = ({ tabType }) => {
                       Mobile
                     </Box>
                   </TableCell>
-                  <TableCell className="bg-blue-100 font-semibold">
-                    <Box className="flex items-center">
-                      <FaClock className="mr-2 text-blue-600" />
-                      Updated At
-                    </Box>
-                  </TableCell>
+
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaUniversity className="mr-2 text-blue-600" />
@@ -317,7 +312,7 @@ const Admitted = ({ tabType }) => {
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
                       <FaBook className="mr-2 text-blue-600" />
-                      Course ID
+                      Course
                     </Box>
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
@@ -350,10 +345,22 @@ const Admitted = ({ tabType }) => {
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.mobile}</TableCell>
-                    <TableCell>{formatDate(item.updatedAt)}</TableCell>
-                    <TableCell>{item.collegeId ?? "N/A"}</TableCell>
-                    <TableCell>{item.courseId ?? "N/A"}</TableCell>
-                    <TableCell>{item.closedBy ?? "N/A"}</TableCell>
+
+                    <TableCell>
+                      <span className={!item.collegeId && "text-red-600"}>
+                        {item.collegeId ?? "Not Provided"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={!item.courseId && "text-red-600"}>
+                        {item.courseId ?? "Not Provided"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={!item.closedBy && "text-red-600"}>
+                        {item.closedBy ?? "Not Provided"}
+                      </span>
+                    </TableCell>
                     <TableCell>{item.closingSummary ?? "N/A"}</TableCell>
                     <TableCell
                       onClick={() => setSelectedId(item._id)}
