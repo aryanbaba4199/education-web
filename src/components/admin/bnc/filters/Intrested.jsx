@@ -169,7 +169,8 @@ const Intrested = ({ tabType, users }) => {
       Mobile: item.mobile,
       College : item.collegeId??'Not Provided',
       Course : item.courseId??'Not Provided',
-      
+      Feedback : item.feedback??'Not Provided',
+      'newDate' : item.nextDate??'Not Provided',
       'Intrest Level': item.intrestLevel ?? "N/A",
       "Init By": item.initBy,
     }));
@@ -211,6 +212,10 @@ const Intrested = ({ tabType, users }) => {
     doc.save("interested_calls.pdf");
   };
 
+  for(let i =0; i<data.length; i++){
+    console.log(data[i]._id)
+  }
+
   return (
     <Box className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <Box className="max-w-6xl mx-auto">
@@ -236,7 +241,7 @@ const Intrested = ({ tabType, users }) => {
             className="bg-green-600 hover:bg-green-700"
             disabled={loading}
           >
-            Download Excel
+            {loading ? 'Processing...' : "Download Excel"}
           </Button>
           <Button
             variant="contained"
@@ -376,6 +381,13 @@ const Intrested = ({ tabType, users }) => {
       <Dialog open={selectedId !== null} onClose={() => setSelectedId(null)}>
         <BncCallDetails callId={selectedId} setCallId={setSelectedId} />
       </Dialog>
+      <Dialog open={loading}>
+              <div className="p-4 flex flex-col gap-2 justify-center items-center min-w-fit">
+                <CircularProgress color="info"/>
+                <Typography>Preparing Excel Sheet</Typography>
+                <Typography fontWeight={700}>Has More Data : {hasMore ? "Yes" : "No"}</Typography>
+              </div>
+            </Dialog>
     </Box>
   );
 };

@@ -246,7 +246,7 @@ const Missed = ({ tabType, users }) => {
             className="bg-green-600 hover:bg-green-700"
             disabled={loading || data.length === 0}
           >
-            Download Excel
+           {loading ? 'Processing...' : "Download Excel"}
           </Button>
           <Button
             variant="contained"
@@ -320,7 +320,7 @@ const Missed = ({ tabType, users }) => {
                     <TableCell>{item.mobile || "N/A"}</TableCell>
                     <TableCell>{formatDate(item.nextDate)}</TableCell>
                     <TableCell>
-                      {users.find(user => user._id === item.initBy)?.name || "N/A"}
+                      {item.initBy|| "N/A"}
                     </TableCell>
                     <TableCell className="hover:cursor-pointer hover:bg-gray-300">
                       <FaEye

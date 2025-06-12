@@ -29,7 +29,8 @@ export const bncApi = {
     empStatementCalls : `${bncUrl}/admin/empStatementCalls`,
     deleteEmployee : `${bncUrl}/admin/deleteeid`,
     linkEmployee : `${bncUrl}/admin/linkid`,
-    searchCalls : `${bncUrl}/admin/searchCalls`
+    searchCalls : `${bncUrl}/admin/searchCalls`,
+    analytics : `${bncUrl}/admin/getAnalytics`,
 }
 
 export const collegeApi  = {

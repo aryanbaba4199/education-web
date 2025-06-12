@@ -111,7 +111,7 @@ const NotIntrested = ({ tabType }) => {
   }, [page, tabType]);
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "Not Provided";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -151,15 +151,16 @@ const NotIntrested = ({ tabType }) => {
 
     const worksheetData = allCalls.map((item, index) => ({
       "S.N": index + 1,
-      Name: item.name || "N/A",
-      Mobile: item.mobile || "N/A",
+      Name: item.name || "Not Provided",
+      Mobile: item.mobile || "Not Provided",
       "Updated At": formatDate(item.updatedAt),
-      Feedback: item.feedback ?? "N/A",
+      Feedback: item.feedback ?? "Not Provided",
+      initBy : item.initBy,
     }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "NotInterested");
-    XLSX.writeFile(workbook, "not_interested_calls.xlsx");
+    XLSX.writeFile(workbook, "not_connected.xlsx");
   };
 
   const downloadPDF = () => {
@@ -170,10 +171,10 @@ const NotIntrested = ({ tabType }) => {
       head: [["S.N", "Name", "Mobile", "Updated At", "Feedback"]],
       body: data.map((item, index) => [
         index + 1,
-        item.name || "N/A",
-        item.mobile || "N/A",
+        item.name || "Not Provided",
+        item.mobile || "Not Provided",
         formatDate(item.updatedAt),
-        item.feedback ?? "N/A",
+        item.feedback ?? "Not Provided",
       ]),
       theme: "striped",
       styles: { fontSize: 10 },
@@ -207,7 +208,7 @@ const NotIntrested = ({ tabType }) => {
             className="bg-green-600 hover:bg-green-700"
             disabled={loading}
           >
-            Download Excel
+            {loading ? 'Processing...' : "Download Excel"}
           </Button>
           <Button
             variant="contained"
@@ -284,6 +285,12 @@ const NotIntrested = ({ tabType }) => {
                   </TableCell>
                   <TableCell className="bg-blue-100 font-semibold">
                     <Box className="flex items-center">
+                      <FaCalendar className="mr-2 text-blue-600" />
+                      Initiate By
+                    </Box>
+                  </TableCell>
+                  <TableCell className="bg-blue-100 font-semibold">
+                    <Box className="flex items-center">
                       <FaEdit className="mr-2 text-blue-600" />
                       Action
                     </Box>
@@ -298,10 +305,11 @@ const NotIntrested = ({ tabType }) => {
                     className="hover:bg-gray-50"
                   >
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell>{item.name || "N/A"}</TableCell>
-                    <TableCell>{item.mobile || "N/A"}</TableCell>
+                    <TableCell>{item.name || "Not Provided"}</TableCell>
+                    <TableCell>{item.mobile || "Not Provided"}</TableCell>
                     <TableCell>{formatDate(item.updatedAt)}</TableCell>
-                    <TableCell>{item.feedback ?? "N/A"}</TableCell>
+                    <TableCell>{item.feedback ?? "Not Provided"}</TableCell>
+                     <TableCell>{item.initBy ?? "Not Provided"}</TableCell>
                     <TableCell
                       onClick={() => setSelectedId(item._id)}
                       className="hover:cursor-pointer hover:bg-gray-300"
@@ -323,6 +331,13 @@ const NotIntrested = ({ tabType }) => {
       </Box>
       <Dialog open={selectedId !== null} onClose={() => setSelectedId(null)}>
         <BncCallDetails callId={selectedId} setCallId={setSelectedId} />
+      </Dialog>
+      <Dialog open={loading}>
+        <div className="p-4 flex flex-col gap-2 justify-center items-center min-w-fit">
+          <CircularProgress color="info"/>
+          <Typography>Preparing Excel Sheet : page {page}</Typography>
+          <Typography fontWeight={700}>Has More Data : {hasMore ? "Yes" : "No"}</Typography>
+        </div>
       </Dialog>
     </Box>
   );

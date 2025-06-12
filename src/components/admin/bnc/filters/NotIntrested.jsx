@@ -172,9 +172,10 @@ const NotIntrested = ({ tabType }) => {
             color="success"
             startIcon={<FaFileExcel />}
             onClick={downloadExcel}
+            disabled={loading}
             className="bg-green-600 hover:bg-green-700"
           >
-            Download Excel
+         {loading ? 'Processing...' : "Download Excel"}
           </Button>
           <Button
             variant="contained"
