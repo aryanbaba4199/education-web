@@ -15,12 +15,7 @@ const TermsAndCondition = () => {
           <p className="text-lg sm:text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto">
             By using Stand Alone App, you agree to our terms and conditions. Learn more about your responsibilities and our policies below.
           </p>
-          <Link
-            to="/contact-us"
-            className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 rounded-full transition duration-300 transform hover:scale-105"
-          >
-            Contact Us
-          </Link>
+          
         </div>
       </section>
 

@@ -85,6 +85,17 @@ const Navbar = () => {
                     }`}
             >
                 <div className="flex flex-col items-center space-y-4 py-4">
+
+
+
+                    <Link
+                        to="/about-us"
+                        className="text-base font-medium hover:text-orange-500 transition duration-300"
+                        onClick={toggleMobileMenu}
+                    >
+                        Home
+                    </Link>
+
                     <Link
                         to="/about-us"
                         className="text-base font-medium hover:text-orange-500 transition duration-300"
@@ -92,13 +103,9 @@ const Navbar = () => {
                     >
                         About Us
                     </Link>
-                    <Link
-                        to="/services"
-                        className="text-base font-medium hover:text-orange-500 transition duration-300"
-                        onClick={toggleMobileMenu}
-                    >
-                        Services
-                    </Link>
+
+
+
                     <Link
                         to="/privacy-policy"
                         className="text-base font-medium hover:text-orange-500 transition duration-300"
@@ -107,14 +114,14 @@ const Navbar = () => {
                         Privacy Policy
                     </Link>
                     <Link
-                        to="/terms-and-conditions"
+                        to="/terms-and-condition"
                         className="text-base font-medium hover:text-orange-500 transition duration-300"
                         onClick={toggleMobileMenu}
                     >
                         Terms
                     </Link>
                     <Link
-                        to="/get-started"
+                        to="/"
                         className="bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-4 py-2 rounded-full transition duration-300"
                         onClick={toggleMobileMenu}
                     >
