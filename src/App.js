@@ -20,6 +20,10 @@ import Admin from "./components/admin/Admin";
 import {Provider} from 'react-redux'
 import Employees from "./components/admin/employee/Employees";
 import store from "./redux/Store";
+import AboutUs from "./components/Profile/Aboutus";
+import TermsAndCondition from "./components/Profile/Terms";
+import PrivacyAndPolicy from "./components/Profile/Privacy";
+import Navbar from "./components/Profile/Navbar";
 
 
 const ProtectedRoute = ({children})=>{
@@ -51,9 +55,13 @@ const App = () => {
     <Provider store={store}>
     <BrowserRouter>
     <ErrorBoundaryWrapper>
+      <Navbar/>
       <Routes>
+        
         <Route path="/" element={<Home />} />
-      
+         <Route path="/about-us" element={<AboutUs />} />
+         <Route path="/terms-and-condition" element={<TermsAndCondition />} />
+          <Route path="/privacy-policy" element={<PrivacyAndPolicy />} />
         <Route path="/college-details" element={<CollegeDetails />} />
         <Route path="/colleges" element={<College />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />

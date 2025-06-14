@@ -381,13 +381,7 @@ const Intrested = ({ tabType, users }) => {
       <Dialog open={selectedId !== null} onClose={() => setSelectedId(null)}>
         <BncCallDetails callId={selectedId} setCallId={setSelectedId} />
       </Dialog>
-      <Dialog open={loading}>
-              <div className="p-4 flex flex-col gap-2 justify-center items-center min-w-fit">
-                <CircularProgress color="info"/>
-                <Typography>Preparing Excel Sheet</Typography>
-                <Typography fontWeight={700}>Has More Data : {hasMore ? "Yes" : "No"}</Typography>
-              </div>
-            </Dialog>
+      
     </Box>
   );
 };

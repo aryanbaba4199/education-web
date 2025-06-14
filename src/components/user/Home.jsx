@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { collegeApi, getterFunction, posterFunction, userApi } from "../../Api"; // Adjust path as needed
 import Swal from "sweetalert2";
+import Profile from "../Profile/Profile";
 
 const Home = () => {
   const [name, setName] = useState("");
@@ -77,7 +78,7 @@ const Home = () => {
     if (token) {
       navigate("/admin");
     }else if(userToken){
-      navigate("/colleges");
+      navigate("/");
     }
   };
 
@@ -153,7 +154,7 @@ const Home = () => {
             <img
               src={slides[currentSlideIndex].image}
               alt="Slide"
-              className={`w-full h-[340px] object-cover transition-opacity duration-500 ${
+              className={`object-fill w-full h-96 transition-opacity duration-500 ${
                 fade ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -166,7 +167,9 @@ const Home = () => {
           )}
         </div>
       </div>
-
+          <div>
+            <Profile/>
+          </div>
       {/* Form or Welcome Message */}
       {!isSubmitted ? (
         <div className="flex-1 flex justify-center items-center p-5">
