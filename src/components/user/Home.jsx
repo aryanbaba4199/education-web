@@ -10,6 +10,7 @@ import {
 import { collegeApi, getterFunction, posterFunction, userApi } from "../../Api"; // Adjust path as needed
 import Swal from "sweetalert2";
 import Profile from "../Profile/Profile";
+import AboutUs from "../Profile/Aboutus";
 
 const Home = () => {
   const [name, setName] = useState("");
@@ -147,6 +148,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      <AboutUs/>
       {/* Slideshow Card */}
       <div className="h-1/4 bg-white shadow-md border-b border-gray-200">
         <div className="flex justify-center items-center h-full">
