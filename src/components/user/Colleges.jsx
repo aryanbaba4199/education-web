@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import {
   FaPhone,
   FaWhatsapp,
+<<<<<<< HEAD
   // FaSchool, // Uncomment if you want to use this icon
+=======
+  FaSchool,
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
   FaSearch,
   FaArrowRight,
 } from "react-icons/fa";

@@ -24,8 +24,11 @@ import AboutUs from "./components/Profile/Aboutus";
 import TermsAndCondition from "./components/Profile/Terms";
 import PrivacyAndPolicy from "./components/Profile/Privacy";
 import Navbar from "./components/Profile/Navbar";
+<<<<<<< HEAD
 import ViewFAQ from "./components/Profile/ViewFAQ";
 import GetStarted from "./components/Profile/GetStarted";
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 
 
 const ProtectedRoute = ({children})=>{
@@ -51,26 +54,40 @@ const App = () => {
       return false;
     }
   }
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 
   return (
     <Provider store={store}>
     <BrowserRouter>
     <ErrorBoundaryWrapper>
+<<<<<<< HEAD
       
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
       <Navbar/>
       <Routes>
         
         
          <Route path="/about-us" element={<AboutUs />} />
          <Route path="/" element={<Home />} />
+<<<<<<< HEAD
          <Route path="/terms-and-conditions" element={<TermsAndCondition />} />
+=======
+         <Route path="/terms-and-condition" element={<TermsAndCondition />} />
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
           <Route path="/privacy-policy" element={<PrivacyAndPolicy />} />
         <Route path="/college-details" element={<CollegeDetails />} />
         <Route path="/colleges" element={<College />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+<<<<<<< HEAD
         <Route path='faq' element={<ViewFAQ />} />
         <Route path="/get-started" element={<GetStarted />} />
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
         <Route path="/admin" element={<ProtectedRoute><Admin/></ProtectedRoute>}/>
         <Route path="/admin/college" element={<ProtectedRoute><CollegeList /></ProtectedRoute>} />
         <Route path="/admin/collegeDetails/:collegeId" element={<ProtectedRoute><AdminCollegeDetails/></ProtectedRoute>} />

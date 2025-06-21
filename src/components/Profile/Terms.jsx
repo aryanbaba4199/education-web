@@ -2,8 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaFileContract, FaCheckCircle, FaQuestionCircle, FaEnvelope } from 'react-icons/fa';
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 const TermsAndCondition = () => {
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
@@ -147,12 +150,21 @@ const TermsAndCondition = () => {
             Our team is ready to clarify any questions you have about our terms and conditions.
           </p>
           <div className="flex justify-center">
+<<<<<<< HEAD
             <a
   href="mailto:support@standaloneapp.com"
   className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 rounded-full transition duration-300 transform hover:scale-105"
 >
   <FaEnvelope className="inline-block mr-2" /> Contact Support
 </a>
+=======
+            <Link
+              to="/contact-us"
+              className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 rounded-full transition duration-300 transform hover:scale-105"
+            >
+              <FaEnvelope className="inline-block mr-2" /> Contact Support
+            </Link>
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
           </div>
         </div>
       </section>

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+<<<<<<< HEAD
 import { FaBars, FaTimes } from 'react-icons/fa';
+=======
+import { FaBars, FaTimes, FaGraduationCap } from 'react-icons/fa';
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 
 const Navbar = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -52,7 +56,11 @@ const Navbar = () => {
                             to="/terms-and-conditions"
                             className="text-base font-medium hover:text-orange-500 transition duration-300"
                         >
+<<<<<<< HEAD
                             Terms & Conditions
+=======
+                            Terms & Condition
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
                         </Link>
                         <Link
                             to="/"
@@ -114,7 +122,11 @@ const Navbar = () => {
                         Privacy Policy
                     </Link>
                     <Link
+<<<<<<< HEAD
                         to="/terms-and-conditions"
+=======
+                        to="/terms-and-condition"
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
                         className="text-base font-medium hover:text-orange-500 transition duration-300"
                         onClick={toggleMobileMenu}
                     >

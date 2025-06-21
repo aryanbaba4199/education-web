@@ -3,8 +3,13 @@ import Swal from 'sweetalert2';
 
 // const apiUrl = 'http://192.168.31.105:5000'
 const apiUrl = 'https://education-1064837086369.asia-south1.run.app'
+<<<<<<< HEAD
 const bncUrl = 'http://localhost:5000'
 // const bncUrl = `https://callbackend-307816796518.asia-south1.run.app`
+=======
+// const bncUrl = 'http://localhost:5000'
+const bncUrl = `https://callbackend-307816796518.asia-south1.run.app`
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 
 export const userApi = {
     createUser : `${apiUrl}/users/createUser`,

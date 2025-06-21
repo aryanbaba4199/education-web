@@ -19,7 +19,10 @@
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
+<<<<<<< HEAD
     "framer-motion": "^12.18.1",
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "react": "^19.1.0",

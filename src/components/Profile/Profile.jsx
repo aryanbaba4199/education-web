@@ -1,8 +1,13 @@
 import React from 'react';
 import { Container, Typography, Box, Button, Card, CardContent, Grid } from '@mui/material';
+<<<<<<< HEAD
 import { FaInfoCircle, FaShieldAlt, FaUsers, FaGraduationCap} from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import TestimonialSlider from './TestimonialSlider';
+=======
+import { FaInfoCircle, FaShieldAlt, FaUsers, FaGraduationCap, FaStar } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 
 const Profile = () => {
   return (
@@ -156,8 +161,12 @@ const Profile = () => {
       </Box>
 
       {/* Testimonials Section */}
+<<<<<<< HEAD
       <TestimonialSlider />
       {/* <Box className="bg-gray-100 py-12 flex flex-col flex-wrap justify-between items-center w-full sm:py-16">
+=======
+      <Box className="bg-gray-100 py-12 flex flex-col flex-wrap justify-between items-center w-full sm:py-16">
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
         <div maxWidth="lg" className="px-4">
           <Typography
             variant="h3"
@@ -214,7 +223,11 @@ const Profile = () => {
             </Grid>
           </Grid>
         </div>
+<<<<<<< HEAD
       </Box> */}
+=======
+      </Box>
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 
       {/* CTA Footer */}
       <Box className="bg-blue-900 text-white py-12 sm:py-16">

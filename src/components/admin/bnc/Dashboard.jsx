@@ -96,7 +96,10 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
   };
 
   const getDateData = async (startDate, endDate) => {
@@ -502,7 +505,10 @@ const Dashboard = () => {
                 </Card>
               </Tooltip>
             </Grid>
+<<<<<<< HEAD
 
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Tooltip title={`${activeTab === 2 ? "Today's" : activeTab === 3 ? "Selected Period" : activeTab === 4 ? "Employee" : "Total"} call volume`}>
                 <Card
@@ -524,8 +530,11 @@ const Dashboard = () => {
                 </Card>
               </Tooltip>
             </Grid>
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Tooltip title="Follow-ups past due date">
                 <Card

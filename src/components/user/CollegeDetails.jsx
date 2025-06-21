@@ -16,9 +16,15 @@ import {
 } from "react-icons/fa";
 import {
   collegeApi,
+<<<<<<< HEAD
   // distanceApi, // distanceApi is not used in this component
   getterFunction,
   // posterFunction, // posterFunction is not used in this component
+=======
+  distanceApi,
+  getterFunction,
+  posterFunction,
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 } from "../../Api"; // Adjust path as needed
 import { getCurrentDistance } from "../../functions/Location";
 

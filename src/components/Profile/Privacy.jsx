@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { FaLock, FaShieldAlt, FaQuestionCircle, FaEnvelope } from 'react-icons/fa';
 
 const PrivacyAndPolicy = () => {
+<<<<<<< HEAD
   
+=======
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
   return (
     <div className="bg-gray-100 w-full min-h-screen font-sans">
       {/* Hero Section */}
@@ -125,6 +128,7 @@ const PrivacyAndPolicy = () => {
         </div>
       </section>
 
+<<<<<<< HEAD
     {/* Contact Section */}
 <section className="py-12 sm:py-16 md:py-20 bg-white">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -181,6 +185,22 @@ const PrivacyAndPolicy = () => {
   </div>
 </section>
 
+=======
+      {/* Contact Section */}
+      <section className="py-12 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl text-blue-900 font-bold mb-6">
+            Have Questions About Your Privacy?
+          </h2>
+          <p className="text-base sm:text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
+            Our team is here to help. Reach out to us for any privacy-related inquiries.
+          </p>
+          <div className="flex justify-center">
+            
+          </div>
+        </div>
+      </section>
+>>>>>>> 10acf22f2f78571a107ea624cf9336af654eb0fe
 
       {/* CTA Footer */}
       <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-12 sm:py-16 md:py-20">
