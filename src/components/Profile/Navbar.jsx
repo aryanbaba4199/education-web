@@ -16,7 +16,7 @@ const Navbar = () => {
                     {/* Logo and Brand Name */}
                     <Link to="/" className="flex items-center ">
                         <img
-                            src="logo.png"
+                            src="/logo.png"
                             alt="Stand Alone App Logo"
 
                             className="h-10 mr-4 w-10 object-contain rounded-full"

@@ -118,6 +118,10 @@ const BncCallDetails = ({ callId, setCallId }) => {
         return <span className="text-yellow-600">Not Connected</span>;
       case 4:
         return <span className="text-red-600">Invalid Number</span>;
+      case 5:
+        return <span className="text-yellow-600">Call Later</span>;  
+      default : 
+        return <span className="text-red-600">Not Provided</span>;  
     }
   };
 
@@ -258,7 +262,7 @@ const BncCallDetails = ({ callId, setCallId }) => {
                       variant="h6"
                       className="font-semibold text-gray-800"
                     >
-                      {callData.collegeId || "N/A"}
+                      {callData.collegeId || "Not Collected"}
                     </Typography>
                   </Box>
                 </Box>
@@ -276,7 +280,7 @@ const BncCallDetails = ({ callId, setCallId }) => {
                       variant="h6"
                       className="font-semibold text-gray-800"
                     >
-                      {callData.courseId || "N/A"}
+                      {callData.courseId || "Not Collected"}
                     </Typography>
                   </Box>
                 </Box>
