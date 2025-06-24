@@ -85,9 +85,10 @@ const Dashboard = () => {
   const handleDateValidation = async()=>{
     try{
       const res = await getterFunction(bncApi.validateNextDate);
+      console.log('Validation response:', res);
       Swal.fire({
         title : 'Success',
-        text : res.message,
+        text : res.data.message,
         icon : 'success'
       })
     }catch(e){

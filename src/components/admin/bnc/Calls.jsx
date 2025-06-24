@@ -510,7 +510,7 @@ const exportToExcel = useCallback(async () => {
 
         <div>
           <Typography>Filter</Typography>
-          <div className="flex gap-2 mb-8">
+          <div className="flex flex-wrap gap-2 mb-8">
             {filterButtons.map((item) => (
               <button
                 key={item.value}
