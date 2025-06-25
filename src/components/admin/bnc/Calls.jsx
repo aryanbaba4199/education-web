@@ -85,7 +85,7 @@ const Calls = () => {
       { title: "Not Connected", value: 3, color: "yellow", count : counts.notConnected},
       { title: "Invalid Number", value: 4, color: "red", count : counts.invalid },
       
-      { title: "Admitted", value: 5, color: "green", count : counts.invalid},
+      { title: "Admitted", value: 5, color: "green", count : counts.totalAdmissions},
       { title: "Missed ", value: 6, color: "red", count : counts.expiredFollowups },
     ],
     []
