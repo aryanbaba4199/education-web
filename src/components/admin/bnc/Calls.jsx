@@ -79,7 +79,7 @@ const Calls = () => {
 
   const filterButtons = useMemo(
     () => [
-      { title: "All", value: 0, color: "cyan" , count : counts.totalCalls},
+      { title: "All", value: 0, color: "purple", count : counts.totalCalls},
       { title: "Interested", value: 1, color: "green" , count : counts.intrested},
       { title: "Not Interested", value: 2, color: "red", count : counts.notIntrested },
       { title: "Not Connected", value: 3, color: "yellow", count : counts.notConnected},

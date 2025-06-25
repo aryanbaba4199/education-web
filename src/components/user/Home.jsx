@@ -23,8 +23,8 @@ const Home = () => {
 
   // Dummy advertiser data
   const advertiser = {
-    phone: "+91-7005742790",
-    whatsapp: "+917005742790",
+    phone: "+91-9633121899",
+    whatsapp: "+919633121899",
     adContent: "Special Offer: 20% Off Today Only!",
   };
 
@@ -36,12 +36,12 @@ const Home = () => {
 
 
   const getAppDetails = async () => {
-    try{
+    try {
       const res = await getterFunction(collegeApi.getAppDetails);
-      if(res.success){
+      if (res.success) {
         localStorage.setItem('appDetails', JSON.stringify(res.data));
       }
-    }catch(e){
+    } catch (e) {
       console.error("Error getting app ", e);
     }
   }
@@ -75,10 +75,10 @@ const Home = () => {
   const verifyToken = async () => {
     const token = localStorage.getItem("eduadmintoken");
     const userToken = localStorage.getItem("edutoken");
-    console.log("Verifying", token, userToken);
+
     if (token) {
       navigate("/admin");
-    }else if(userToken){
+    } else if (userToken) {
       navigate("/");
     }
   };
@@ -104,8 +104,8 @@ const Home = () => {
         });
 
         if (formValues) {
-          console.log("ID:", formValues.id);
-          console.log("Password:", formValues.password);
+
+
           const res = await posterFunction(userApi.adminLogin, formValues);
           if (res.success) {
             Swal.fire({
@@ -123,11 +123,11 @@ const Home = () => {
 
       const formData = { name, mobile };
       const res = await posterFunction(userApi.createUser, formData);
-      console.log(res.data);
+
 
       if (res.success) {
         setIsSubmitted(true);
-  
+
         localStorage.setItem("edutoken", res.data);
         navigate("/colleges");
       }
@@ -144,11 +144,11 @@ const Home = () => {
     window.open(`https://wa.me/${advertiser.whatsapp}`, "_blank");
   };
 
-  
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      <AboutUs/>
+      <AboutUs />
       {/* Slideshow Card */}
       <div className="h-1/4 bg-white shadow-md border-b border-gray-200">
         <div className="flex justify-center items-center h-full">
@@ -156,9 +156,8 @@ const Home = () => {
             <img
               src={slides[currentSlideIndex].image}
               alt="Slide"
-              className={`object-fill w-full h-96 transition-opacity duration-500 ${
-                fade ? "opacity-100" : "opacity-0"
-              }`}
+              className={`object-fill w-full h-96 transition-opacity duration-500 ${fade ? "opacity-100" : "opacity-0"
+                }`}
             />
           ) : (
             <img
@@ -169,9 +168,9 @@ const Home = () => {
           )}
         </div>
       </div>
-          <div>
-            <Profile/>
-          </div>
+      <div>
+        <Profile />
+      </div>
       {/* Form or Welcome Message */}
       {!isSubmitted ? (
         <div className="flex-1 flex justify-center items-center p-5">
@@ -232,7 +231,7 @@ const Home = () => {
       {/* Advertiser Contact Details */}
       <div className="p-4 bg-white shadow-md">
         <h3 className="text-lg font-medium text-gray-800 mb-2">
-          Contact Advertiser
+          Contact us
         </h3>
         <div className="flex items-center gap-2 mb-4">
           <FaPhone className="text-teal-600" />

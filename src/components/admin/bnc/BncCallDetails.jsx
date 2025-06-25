@@ -31,7 +31,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchUsers } from "../../../redux/Action";
 
 const BncCallDetails = ({ callId, setCallId }) => {
-  console.log(callId);
+  
   const [callData, setCallData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
