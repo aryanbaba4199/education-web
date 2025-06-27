@@ -1,6 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { FaFileContract, FaCheckCircle, FaQuestionCircle, FaEnvelope } from 'react-icons/fa';
+import Footer from './Footer';
+
+
 
 const TermsAndCondition = () => {
   return (
@@ -145,33 +147,18 @@ const TermsAndCondition = () => {
             Our team is ready to clarify any questions you have about our terms and conditions.
           </p>
           <div className="flex justify-center">
-            <Link
-              to="/contact-us"
-              className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 rounded-full transition duration-300 transform hover:scale-105"
-            >
-              <FaEnvelope className="inline-block mr-2" /> Contact Support
-            </Link>
+            <a
+  href="mailto:support@standaloneapp.com"
+  className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 rounded-full transition duration-300 transform hover:scale-105"
+>
+  <FaEnvelope className="inline-block mr-2" /> Contact Support
+</a>
           </div>
         </div>
       </section>
 
       {/* CTA Footer */}
-      <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-12 sm:py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
-            Start Your Journey with Stand Alone App
-          </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
-            Explore colleges, plan travel, and secure admissions confidently, backed by our clear terms.
-          </p>
-          <Link
-            to="/get-started"
-            className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 rounded-full transition duration-300 transform hover:scale-105"
-          >
-            Get Started Today
-          </Link>
-        </div>
-      </section>
+  <Footer />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaBars, FaTimes, FaGraduationCap } from 'react-icons/fa';
+import { FaBars, FaTimes } from 'react-icons/fa';
 
 const Navbar = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,7 +16,7 @@ const Navbar = () => {
                     {/* Logo and Brand Name */}
                     <Link to="/" className="flex items-center ">
                         <img
-                            src="/logo.png"
+                            src="logo.png"
                             alt="Stand Alone App Logo"
 
                             className="h-10 mr-4 w-10 object-contain rounded-full"
@@ -52,10 +52,10 @@ const Navbar = () => {
                             to="/terms-and-conditions"
                             className="text-base font-medium hover:text-orange-500 transition duration-300"
                         >
-                            Terms & Condition
+                            Terms & Conditions
                         </Link>
                         <Link
-                            to="/"
+                            to="/get-started"
                             className="bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-4 py-2 rounded-full transition duration-300 transform hover:scale-105"
                         >
                             Get Started
@@ -114,14 +114,14 @@ const Navbar = () => {
                         Privacy Policy
                     </Link>
                     <Link
-                        to="/terms-and-condition"
+                        to="/terms-and-conditions"
                         className="text-base font-medium hover:text-orange-500 transition duration-300"
                         onClick={toggleMobileMenu}
                     >
                         Terms
                     </Link>
                     <Link
-                        to="/"
+                        to="/get-started"
                         className="bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-4 py-2 rounded-full transition duration-300"
                         onClick={toggleMobileMenu}
                     >

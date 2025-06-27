@@ -16,9 +16,9 @@ import {
 } from "react-icons/fa";
 import {
   collegeApi,
-  distanceApi,
+  // distanceApi, // distanceApi is not used in this component
   getterFunction,
-  posterFunction,
+  // posterFunction, // posterFunction is not used in this component
 } from "../../Api"; // Adjust path as needed
 import { getCurrentDistance } from "../../functions/Location";
 
@@ -55,14 +55,14 @@ const CollegeDetails = () => {
   const handleCall = () => {
     const appDetails = localStorage.getItem("appDetails");
     window.location.href = `tel:${
-      JSON.parse(appDetails)?.mobile || "+91"
+      JSON.parse(appDetails)?.mobile || "+917005742790"
     }`;
   };
 
   const handleWhatsApp = () => {
     const appDetails = localStorage.getItem("appDetails");
     window.open(
-      `https://wa.me/${JSON.parse(appDetails)?.whatsapp || "+919633121899"}`,
+      `https://wa.me/${JSON.parse(appDetails)?.whatsapp || "+917005742790"}`,
       "_blank"
     );
   };

@@ -24,6 +24,10 @@ import AboutUs from "./components/Profile/Aboutus";
 import TermsAndCondition from "./components/Profile/Terms";
 import PrivacyAndPolicy from "./components/Profile/Privacy";
 import Navbar from "./components/Profile/Navbar";
+import ViewFAQ from "./components/Profile/ViewFAQ";
+import GetStarted from "./components/Profile/GetStarted";
+import HandleUser from "./components/user/HandleUser";
+import Footer from "./components/Profile/Footer";
 
 
 const ProtectedRoute = ({children})=>{
@@ -49,23 +53,27 @@ const App = () => {
       return false;
     }
   }
-
+ 
 
   return (
     <Provider store={store}>
     <BrowserRouter>
     <ErrorBoundaryWrapper>
+      
       <Navbar/>
       <Routes>
         
         
          <Route path="/about-us" element={<AboutUs />} />
          <Route path="/" element={<Home />} />
-         <Route path="/terms-and-condition" element={<TermsAndCondition />} />
+         <Route path="/terms-and-conditions" element={<TermsAndCondition />} />
           <Route path="/privacy-policy" element={<PrivacyAndPolicy />} />
         <Route path="/college-details" element={<CollegeDetails />} />
         <Route path="/colleges" element={<College />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path='faq' element={<ViewFAQ />} />
+        <Route path="/get-started" element={<GetStarted />} />
+        <Route path="/handleuser" element={<HandleUser />} />
         <Route path="/admin" element={<ProtectedRoute><Admin/></ProtectedRoute>}/>
         <Route path="/admin/college" element={<ProtectedRoute><CollegeList /></ProtectedRoute>} />
         <Route path="/admin/collegeDetails/:collegeId" element={<ProtectedRoute><AdminCollegeDetails/></ProtectedRoute>} />

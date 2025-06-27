@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import {
   FaSearch,
   FaPlus,
-  FaEdit,
-  FaTrash,
+  // FaEdit,// Uncomment if you want to use edit icon
+  // FaTrash, // Uncomment if you want to use delete icon
   FaAppStore,
   FaSchool,
 } from "react-icons/fa";
@@ -12,7 +12,7 @@ import SupportForm from "./SupportForm";
 import AddCollege from "./CollegeForm";
 import AddCourse from "./CourseForm";
 import { collegeApi, getterFunction, removerFunction } from "../../../Api";
-import Swal from "sweetalert2";
+// import Swal from "sweetalert2"; // Uncomment if you want to use Swal for alerts
 import Category from "./Category";
 import Tag from "./Tag";
 import AppDetails from "./AppDetails";

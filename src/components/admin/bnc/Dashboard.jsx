@@ -14,7 +14,6 @@ import {
   FaCalendarAlt,
   FaUserTie,
   FaList,
-  FaRegWindowRestore,
 } from 'react-icons/fa';
 import {
   Card,
@@ -42,7 +41,6 @@ import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
 import dayjs from 'dayjs';
 import Analytics from './Analytics';
-import Swal from 'sweetalert2';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, ChartTooltip, Legend);
@@ -81,20 +79,6 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
-
-  const handleDateValidation = async()=>{
-    try{
-      const res = await getterFunction(bncApi.validateNextDate);
-      console.log('Validation response:', res);
-      Swal.fire({
-        title : 'Success',
-        text : res.data.message,
-        icon : 'success'
-      })
-    }catch(e){
-      console.error('Error in validation', e)
-    }
-  }
 
   const getTodaysData = async () => {
     try {
@@ -223,7 +207,7 @@ const Dashboard = () => {
     getDateData(startDate, endDate);
   };
 
-
+  
 
   const tabButtons = [
     { title: 'All', value: 1, icon: <FaList /> },
@@ -266,7 +250,7 @@ const Dashboard = () => {
   };
 
   const handleCardClick = (num) => {
-    let url = `/admin/bnc/calls?tabIndex=${num}&counts=${JSON.stringify(dashboardData)}`;
+    let url = `/admin/bnc/calls?tabIndex=${num}`;
     if (activeTab === 2) {
       url += '&tabType=today';
     } else if (activeTab === 3) {
@@ -293,16 +277,14 @@ const Dashboard = () => {
 
   // Pie chart data
   const pieChartData = {
-    labels: ['Interested', 'Not Interested', 'Not Connected', 'Invalid', 'Admissions', 'Call Later', 'Others'],
+    labels: ['Interested', 'Not Interested', 'Not Connected', 'Invalid', 'Admissions'],
     datasets: [
       {
         data: [
           dashboardData?.intrested || 0,
           dashboardData?.notIntrested || 0,
           dashboardData?.notConnected || 0,
-          dashboardData?.callLater || 0,
           dashboardData?.invalid || 0,
-          dashboardData?.others || 0,
           dashboardData?.totalAdmissions || 0,
         ],
         backgroundColor: [
@@ -311,8 +293,6 @@ const Dashboard = () => {
           'rgba(153, 102, 255, 0.6)',
           'rgba(255, 99, 132, 0.6)',
           'rgba(54, 162, 235, 0.6)',
-          'rgba(154, 162, 235, 0.6)',
-          'rgba(354, 162, 235, 0.6)',
         ],
         borderColor: [
           'rgba(75, 192, 192, 1)',
@@ -320,8 +300,6 @@ const Dashboard = () => {
           'rgba(153, 102, 255, 1)',
           'rgba(255, 99, 132, 1)',
           'rgba(54, 162, 235, 1)',
-          'rgba(154, 162, 235, 0.6)',
-          'rgba(354, 162, 235, 0.6)',
         ],
         borderWidth: 1,
       },
@@ -353,13 +331,14 @@ const Dashboard = () => {
             <Button
               key={index}
               onClick={() => handleClick(item)}
-              className={`flex items-center px-4 py-2 rounded-lg transition-all duration-300 ${activeTab === item.value
+              className={`flex items-center px-4 py-2 rounded-lg transition-all duration-300 ${
+                activeTab === item.value
                   ? 'bg-gradient-to-r from-red-600 to-blue-400 text-white shadow-lg'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+              }`}
             >
               {item.icon}
-              <span className={`ml-2 ${activeTab === index + 1 && 'text-white'}`}>{item.title}</span>
+              <span className={`ml-2 ${activeTab===index+1 && 'text-white'}`}>{item.title}</span>
             </Button>
           ))}
         </Box>
@@ -422,7 +401,7 @@ const Dashboard = () => {
             </Fade>
           </Modal>
         )}
-
+   
 
         {activeTab === 4 && employees.length > 0 && (
           <Modal open={showDate} onClose={() => setShowDate(false)}>
@@ -543,6 +522,8 @@ const Dashboard = () => {
                 </Card>
               </Tooltip>
             </Grid>
+
+
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Tooltip title="Follow-ups past due date">
                 <Card
@@ -624,35 +605,9 @@ const Dashboard = () => {
                       <CountUp end={dashboardData?.notConnected || 0} duration={2} />
                     </Typography>
                   </CardContent>
-
-
                 </Card>
               </Tooltip>
             </Grid>
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <Tooltip title="Calls not connected">
-                <Card
-                  className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-                  sx={{ display: 'flex', alignItems: 'center', p: 2 }}
-                  onClick={() => handleCardClick(3)}
-                >
-                  <Box className="p-3 rounded-full bg-purple-200 text-purple-600 mr-4">
-                    <FaPhoneSlash size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Call Later
-                    </Typography>
-                    <Typography variant="h5" className="font-bold text-gray-800">
-                      <CountUp end={dashboardData?.callLater || 0} duration={2} />
-                    </Typography>
-                  </CardContent>
-
-
-                </Card>
-              </Tooltip>
-            </Grid>
-
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Tooltip title="Invalid phone numbers">
                 <Card
@@ -671,29 +626,6 @@ const Dashboard = () => {
                       <CountUp end={dashboardData?.invalid || 0} duration={2} />
                     </Typography>
                   </CardContent>
-                </Card>
-              </Tooltip>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <Tooltip title="Calls not connected">
-                <Card
-                  className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-                  sx={{ display: 'flex', alignItems: 'center', p: 2 }}
-                  onClick={() => handleCardClick(3)}
-                >
-                  <Box className="p-3 rounded-full bg-purple-200 text-red-600 mr-4">
-                    <FaRegWindowRestore size={24} />
-                  </Box>
-                  <CardContent className="p-0">
-                    <Typography variant="body2" color="textSecondary">
-                      Others
-                    </Typography>
-                    <Typography variant="h5" className="font-bold text-gray-800">
-                      <CountUp end={dashboardData?.others || 0} duration={2} />
-                    </Typography>
-                  </CardContent>
-
-
                 </Card>
               </Tooltip>
             </Grid>
@@ -777,13 +709,7 @@ const Dashboard = () => {
             >
               Employee Management
             </Link>
-            <button
-              className="px-6 py-2 text-lg text-white bg-gradient-to-r from-slate-900 to-slate-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-              onClick={()=>handleDateValidation()}
-            >
-              Validated next Date
-            </button>
-
+            
           </Box>
         </Box>
       </Box>

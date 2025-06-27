@@ -31,7 +31,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchUsers } from "../../../redux/Action";
 
 const BncCallDetails = ({ callId, setCallId }) => {
-  
+  console.log(callId);
   const [callData, setCallData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -111,17 +111,13 @@ const BncCallDetails = ({ callId, setCallId }) => {
   const renderConnectionState = (id) => {
     switch (id) {
       case 1:
-        return <span className="text-green-600">Intrested</span>;
+        return <span className="text-green-600">Interested</span>;
       case 2:
-        return <span className="text-red-600">Not Intrested</span>;
+        return <span className="text-red-600">Not Interested</span>;
       case 3:
         return <span className="text-yellow-600">Not Connected</span>;
       case 4:
         return <span className="text-red-600">Invalid Number</span>;
-      case 5:
-        return <span className="text-yellow-600">Call Later</span>;  
-      default : 
-        return <span className="text-red-600">Not Provided</span>;  
     }
   };
 
@@ -256,13 +252,13 @@ const BncCallDetails = ({ callId, setCallId }) => {
                   <FaUniversity className="text-indigo-600 mr-2" size={20} />
                   <Box>
                     <Typography variant="body2" color="textSecondary">
-                      College ID 
+                      College ID
                     </Typography>
                     <Typography
                       variant="h6"
                       className="font-semibold text-gray-800"
                     >
-                      {callData.collegeId || "Not Collected"}
+                      {callData.collegeId || "N/A"}
                     </Typography>
                   </Box>
                 </Box>
@@ -277,10 +273,10 @@ const BncCallDetails = ({ callId, setCallId }) => {
                       Course ID
                     </Typography>
                     <Typography
-                      variant="h5"
+                      variant="h6"
                       className="font-semibold text-gray-800"
                     >
-                      {callData.courseId || "Not Collected"}
+                      {callData.courseId || "N/A"}
                     </Typography>
                   </Box>
                 </Box>

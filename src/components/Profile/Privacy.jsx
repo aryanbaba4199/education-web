@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaLock, FaShieldAlt, FaQuestionCircle, FaEnvelope } from 'react-icons/fa';
+import Footer from './Footer';
 
 const PrivacyAndPolicy = () => {
+  
   return (
     <div className="bg-gray-100 w-full min-h-screen font-sans">
       {/* Hero Section */}
@@ -124,38 +126,65 @@ const PrivacyAndPolicy = () => {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl text-blue-900 font-bold mb-6">
-            Have Questions About Your Privacy?
-          </h2>
-          <p className="text-base sm:text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
-            Our team is here to help. Reach out to us for any privacy-related inquiries.
-          </p>
-          <div className="flex justify-center">
-            
-          </div>
+    {/* Contact Section */}
+<section className="py-12 sm:py-16 md:py-20 bg-white">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 className="text-3xl sm:text-4xl md:text-5xl text-blue-900 font-bold mb-6">
+      Have Questions About Your Privacy?
+    </h2>
+    <p className="text-base sm:text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
+      Our team is here to help. Reach out to us for any privacy-related inquiries.
+    </p>
+
+    <div className="flex flex-col md:flex-row justify-center gap-8 items-center">
+      {/* Contact Card */}
+      <div className="bg-blue-50 p-6 rounded-2xl shadow-md w-full max-w-md hover:shadow-xl transition duration-300">
+        <div className="flex items-center justify-center mb-4 text-blue-700">
+          <FaEnvelope className="text-3xl" />
         </div>
-      </section>
+        <h3 className="text-xl font-semibold text-blue-900 mb-2">Email Us</h3>
+        <p className="text-gray-700 mb-4">We usually respond within 24 hours.</p>
+        <a
+          href="mailto:support@yourwebsite.com"
+          className="inline-block bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition"
+        >
+          support@yourwebsite.com
+        </a>
+      </div>
+
+      {/* FAQ Button */}
+      <div className="bg-blue-50 p-6 rounded-2xl shadow-md w-full max-w-md hover:shadow-xl transition duration-300">
+        <div className="flex items-center justify-center mb-4 text-blue-700">
+          <FaQuestionCircle className="text-3xl" />
+        </div>
+        <h3 className="text-xl font-semibold text-blue-900 mb-2">FAQs</h3>
+        <p className="text-gray-700 mb-4">Browse commonly asked privacy questions.</p>
+        <Link
+        to="/faq"
+        className="inline-block bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition"
+        >
+          View FAQs
+        </Link>
+        
+      </div>
+    </div>
+
+    {/* Extra CTA */}
+    <div className="mt-12">
+      <p className="text-gray-700 mb-4 text-sm sm:text-base">Still have questions?</p>
+      <Link
+        to="#"
+        className="inline-block bg-gradient-to-r from-blue-700 to-blue-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-600 transition"
+      >
+        Contact Our Team
+      </Link>
+    </div>
+  </div>
+</section>
+
 
       {/* CTA Footer */}
-      <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-12 sm:py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
-            Trust Stand Alone App with Your Journey
-          </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
-            Explore colleges, plan travel, and secure admissions with confidence, knowing your data is protected.
-          </p>
-          <Link
-            to="/"
-            className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 rounded-full transition duration-300 transform hover:scale-105"
-          >
-            Get Started Today
-          </Link>
-        </div>
-      </section>
+      <Footer />
     </div>
   );
 };

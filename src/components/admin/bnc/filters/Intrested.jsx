@@ -182,7 +182,7 @@ const Intrested = ({ tabType, users }) => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    doc.text("Intrested Calls", 14, 20);
+    doc.text("Interested Calls", 14, 20);
     doc.autoTable({
       startY: 30,
       head: [
@@ -223,7 +223,7 @@ const Intrested = ({ tabType, users }) => {
           variant="h4"
           className="font-bold text-gray-800 mb-6 text-center"
         >
-          Intrested Calls
+          Interested Calls
         </Typography>
         <span className="text-lg text-center">
           {tabType &&

@@ -39,7 +39,6 @@ import Missed from "./filters/Missed";
 import { useDispatch, useSelector } from "react-redux";
 
 
-
 // Note: Requires date-fns v2.x for react-date-range
 // npm install react-intersection-observer react-date-range date-fns@2.30.0 @types/react-date-range lodash.debounce
 
@@ -69,24 +68,20 @@ const Calls = () => {
 
   const tabIndexValue = searchParams.get("tabIndex");
   const tabType = searchParams.get("tabType") || "";
-  const counts = JSON.parse(searchParams.get('counts'));
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
   const employeeId = searchParams.get("employeeId");
   const dispatch = useDispatch();
 
-
-
   const filterButtons = useMemo(
     () => [
-      { title: "All", value: 0, color: "purple", count : counts.totalCalls},
-      { title: "Interested", value: 1, color: "green" , count : counts.intrested},
-      { title: "Not Interested", value: 2, color: "red", count : counts.notIntrested },
-      { title: "Not Connected", value: 3, color: "yellow", count : counts.notConnected},
-      { title: "Invalid Number", value: 4, color: "red", count : counts.invalid },
-      
-      { title: "Admitted", value: 5, color: "green", count : counts.totalAdmissions},
-      { title: "Missed ", value: 6, color: "red", count : counts.expiredFollowups },
+      { title: "All", value: 0, color: "green" },
+      { title: "Interested", value: 1, color: "green" },
+      { title: "Not Interested", value: 2, color: "red" },
+      { title: "Not Connected", value: 3, color: "yellow" },
+      { title: "Invalid Number", value: 4, color: "red" },
+      { title: "Admitted", value: 5, color: "green" },
+      { title: "Missed Follow up", value: 6, color: "red" },
     ],
     []
   );
@@ -373,9 +368,9 @@ const exportToExcel = useCallback(async () => {
   const renderConnection = (connection) => {
     switch (connection) {
       case 1:
-        return "Intrested";
+        return "Interested";
       case 2:
-        return "Not Intrested";
+        return "Not Interested";
       case 3:
         return "Not Connected";
       case 4:
@@ -524,12 +519,11 @@ const exportToExcel = useCallback(async () => {
                     fetchCalls(1, 0);
                   }
                 }}
-                className={`px-2 flex-1 flex flex-col justify-center items-center ${
-                  activeFilter === item.value ? `bg-${item.color}-100 shadow-md shadow-black text-${item.color}-700` : `bg-${item.color}-600 text-white`
-                } hover:bg-slate-700  rounded-md py-1`}
+                className={`px-4 flex-1 ${
+                  activeFilter === item.value ? "bg-cyan-600" : "bg-slate-800"
+                } hover:bg-slate-700 text-white rounded-md py-1`}
               >
-                {item.title }
-                <span>{`( ${item.count} )`}</span>
+                {item.title}
               </button>
             ))}
           </div>
@@ -583,7 +577,7 @@ const exportToExcel = useCallback(async () => {
                         {renderConnection(call.connectionState)}
                       </TableCell>
                       <TableCell className="hover:cursor-pointer hover:text-blue-600">
-                        {call.lastCallData.initBy}
+                        {call.initBy}
                       </TableCell>
 
                       <TableCell>
