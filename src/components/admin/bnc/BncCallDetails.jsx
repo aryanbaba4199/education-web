@@ -256,7 +256,7 @@ const BncCallDetails = ({ callId, setCallId }) => {
                   <FaUniversity className="text-indigo-600 mr-2" size={20} />
                   <Box>
                     <Typography variant="body2" color="textSecondary">
-                      College ID
+                      College ID 
                     </Typography>
                     <Typography
                       variant="h6"
@@ -277,7 +277,7 @@ const BncCallDetails = ({ callId, setCallId }) => {
                       Course ID
                     </Typography>
                     <Typography
-                      variant="h6"
+                      variant="h5"
                       className="font-semibold text-gray-800"
                     >
                       {callData.courseId || "Not Collected"}
