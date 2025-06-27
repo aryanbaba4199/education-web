@@ -23,8 +23,8 @@ const HandleUser = () => {
 
   // Dummy advertiser data
   const advertiser = {
-    phone: "+91-7005742790",
-    whatsapp: "+917005742790",
+    phone: "+91-9633121899",
+    whatsapp: "+919633121899",
     adContent: "Special Offer: 20% Off Today Only!",
   };
 

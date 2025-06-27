@@ -55,14 +55,14 @@ const CollegeDetails = () => {
   const handleCall = () => {
     const appDetails = localStorage.getItem("appDetails");
     window.location.href = `tel:${
-      JSON.parse(appDetails)?.mobile || "+917005742790"
+      JSON.parse(appDetails)?.mobile || "+919633121899"
     }`;
   };
 
   const handleWhatsApp = () => {
     const appDetails = localStorage.getItem("appDetails");
     window.open(
-      `https://wa.me/${JSON.parse(appDetails)?.whatsapp || "+917005742790"}`,
+      `https://wa.me/${JSON.parse(appDetails)?.whatsapp || "+919633121899"}`,
       "_blank"
     );
   };
